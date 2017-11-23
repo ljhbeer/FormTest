@@ -127,9 +127,35 @@ namespace FormTest
 
         private Bitmap Test(Bitmap bmp)
         {
+            Rectangle rect = DetectFeatureRectAngle(bmp);
+            if (rect.Width == 1 || rect.Height == 1)
+            {
+                MessageBox.Show("检测失败");
+                return null;
+            }
+
+            Rectangle rectxline = new Rectangle(0, rect.Height / 2, rect.Width, 2);
+            Rectangle rectyline = new Rectangle(rect.Width / 2, 0, rect.Height, 2);
+            int[] xxcnt = new int[bmp.Width];
+            int[] yycnt = new int[bmp.Height];
+            BitmapTools.CountXPixsum(bmp, rectxline, out xxcnt);
+            BitmapTools.CountYPixsum(bmp, rectyline, out yycnt);
+            List<int> xcnt = xxcnt.Select(rec =>2  - rec).ToList();
+            List<int> ycnt = yycnt.Select(rec =>2 - rec).ToList();
+
+            string str = string.Join(",", xxcnt) + "\r\n" + string.Join(",", yycnt);
+            File.WriteAllText("a.txt", str);
+
+            Bitmap b =  bmp.Clone(rect,bmp.PixelFormat );
+            return b;
+
+
+        }
+
+        private Rectangle DetectFeatureRectAngle(Bitmap bmp) //由图片限定
+        {
             Size blacktag = new Size(33, 33);
-            Rectangle r = new Rectangle(0,0,bmp.Width,bmp.Height);
-            
+            Rectangle r = new Rectangle(0, 0, bmp.Width, bmp.Height);
             int[] xxcnt = new int[r.Width];
             int[] yycnt = new int[r.Height];
             BitmapTools.CountXPixsum(bmp, r, out xxcnt);
@@ -151,8 +177,8 @@ namespace FormTest
             //count Xpoint
             int Xpoint = 0;
             int len = 0;
-            int xblackcnt = blacktag.Height*2 /3;
-            int yblackcnt = blacktag.Width*2 /3;
+            int xblackcnt = blacktag.Height * 2 / 3;
+            int yblackcnt = blacktag.Width * 2 / 3;
             int Xlen = 1;
             int Ylen = 1;
             for (int i = 0; i < xcnt.Count; i++)
@@ -165,10 +191,12 @@ namespace FormTest
                 }
                 else
                 {
-                    if (len > yblackcnt){
+                    if (len > yblackcnt)
+                    {
                         Xlen = len;
                         break;
-                    }else
+                    }
+                    else
                         len = 0;
                 }
             }
@@ -185,23 +213,19 @@ namespace FormTest
                 }
                 else
                 {
-                    if (len > xblackcnt){
+                    if (len > xblackcnt)
+                    {
                         Ylen = len;
                         break;
-                    }else
+                    }
+                    else
                         len = 0;
                 }
             }
-            if (Xlen == 1 || Ylen == 1)
-                return null;
-
-            string str = string.Join(",", xxcnt) + "\r\n" + string.Join(",", yycnt);
-            File.WriteAllText("a.txt", str);
-
-            Bitmap b =  bmp.Clone( new Rectangle(Xpoint,Ypoint,Xlen,Ylen),bmp.PixelFormat );
-            return b;
-
-
+            //string str = string.Join(",", xxcnt) + "\r\n" + string.Join(",", yycnt);
+            //File.WriteAllText("a.txt", str);
+            Rectangle rect = new Rectangle(Xpoint, Ypoint, Xlen, Ylen);
+            return rect;
         }
 
 
