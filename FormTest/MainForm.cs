@@ -25,19 +25,32 @@ namespace FormTest
 		void ButtonTestClick(object sender, EventArgs e)
 		{
             System.DateTime dt1 = System.DateTime.Now;
-
             //FormatJpgToTif();
-            AutoLoadLatestImg();
+            //AutoLoadLatestImg();
+            AutoShowTZD();
+
             System.DateTime dt2 = System.DateTime.Now;
             System.TimeSpan ts = dt2 - dt1;
             MessageBox.Show("耗时"+(ts.Minutes*60+ts.Seconds + ts.Milliseconds*1.0/1000.0)+"秒");
 		}
 
+        private void AutoShowTZD(string path = "E:\\Scan\\LJH\\s1025")
+        {
+
+            string latestpath = GetLastestSubDirectory(path);
+            if (latestpath != "")
+            {
+                this.Hide();
+                LoadBitmapData lbmd = new LoadBitmapData(latestpath);
+                FormFullScreenYJ fs = new FormFullScreenYJ(lbmd);
+                fs.ShowDialog();
+                this.Show();
+            }
+        }
         private void FormatJpgToTif()
         {
             string imgfilename = textBoxWorkPath.Text;
             Bitmap bmp =(Bitmap) Bitmap.FromFile(imgfilename);
-
             //Tools.BitmapTools.Gray(bmp);
             Rectangle r = new Rectangle(0, 0, bmp.Width, bmp.Height);
             Rectangle r1 = new Rectangle(0, 0, bmp.Width / 2, bmp.Height);
@@ -45,18 +58,9 @@ namespace FormTest
 
             Bitmap bmpdst = new Bitmap(r.Width, r.Height);
             Tools.BitmapTools.GammaImg(bmpdst, bmp, gramm, r);
-
-
-
-
-
-
-
             bmpdst.Save( imgfilename.Replace(".jpg","_gramm_1.jpg"));
-
             MessageBox.Show("OK");
         }
-
         private void AutoLoadLatestImg(string path = "E:\\Scan\\LJH\\s1025")
         {
             string latestpath = GetLastestSubDirectory(path);
@@ -65,10 +69,9 @@ namespace FormTest
                 List<string> nameList = NameListFromDir(latestpath);
 
                 string msg = "共有文件" + nameList.Count + "个" +  string.Join("\r\n", nameList);
-                //MessageBox.Show(msg);
+                MessageBox.Show(msg);
             }
         }
-
         private static string GetLastestSubDirectory(string path)
         {
             Regex r = new Regex("[0-9]{8}-[0-9]+");
@@ -98,8 +101,7 @@ namespace FormTest
             }
             return new List<string>();
         }
-
-        private static List<string> NameListFromDir(string fidir)
+        public static List<string> NameListFromDir(string fidir)
         {
             List<string> namelist = new List<string>();
             DirectoryInfo dirinfo = new DirectoryInfo(fidir);

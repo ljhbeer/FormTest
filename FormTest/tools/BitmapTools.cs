@@ -10,6 +10,17 @@ namespace Tools
     {
         public BitmapTools()
         {
+            bitcount = null;
+            InitBitCount();
+        }
+        public BitmapTools(System.Drawing.Bitmap bitmap)
+        {
+            this._src = bitmap;
+            bitcount = null;
+            InitBitCount();
+        }
+        private static void InitBitCount()
+        {
             bitcount = new int[256];
             for (int i = 0; i < 256; i++)
             {
@@ -21,10 +32,6 @@ namespace Tools
                 }
             }
         }
-        public BitmapTools(System.Drawing.Bitmap bitmap)
-        {
-            this._src = bitmap;
-        }       
     	public static void DrawBitmap(Bitmap bmp,List<double> ListItem, double max)
         {
             int rw = bmp.Width / ListItem.Count;
@@ -166,6 +173,7 @@ namespace Tools
     
                 if (bmp.PixelFormat == PixelFormat.Format1bppIndexed)
                 {
+                    if (bitcount == null) InitBitCount();
                     for (int i = 0; i < data.Height; i++)
                     {
                         for (int j = 0; j < data.Width / 8; j++)
@@ -239,6 +247,7 @@ namespace Tools
     
                 if (bmp.PixelFormat == PixelFormat.Format1bppIndexed)
                 {
+                    if (bitcount == null) InitBitCount();
                     for (int i = 0; i < data.Height; i++)
                     {
                         for (int j = 0; j < data.Width / 8; j++)
@@ -445,7 +454,7 @@ namespace Tools
             return pos;
         }
     
-        private static void CountXPixsum(Bitmap bmp, Rectangle r, out int[] xcnt)
+        public static void CountXPixsum(Bitmap bmp, Rectangle r, out int[] xcnt)
         {
             xcnt = new int[r.Size.Width];
             BitmapData data = bmp.LockBits(r, ImageLockMode.ReadWrite, bmp.PixelFormat);
@@ -500,7 +509,7 @@ namespace Tools
             }
             bmp.UnlockBits(data);
         }
-        private static void CountYPixsum(Bitmap bmp, Rectangle r, out int[] ycnt)
+        public static void CountYPixsum(Bitmap bmp, Rectangle r, out int[] ycnt)
         {
             ycnt = new int[r.Size.Height];
             BitmapData data = bmp.LockBits(r, ImageLockMode.ReadWrite, bmp.PixelFormat);
@@ -510,6 +519,7 @@ namespace Tools
     
                 if (bmp.PixelFormat == PixelFormat.Format1bppIndexed)
                 {
+                    if (bitcount == null) InitBitCount();
                     for (int i = 0; i < data.Height; i++)
                     {
                         for (int j = 0; j < data.Width / 8; j++)
