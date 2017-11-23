@@ -461,10 +461,12 @@ namespace Tools
             unsafe
             {
                 byte* ptr = (byte*)(data.Scan0);
+                byte* ptr1 = ptr;
                 if (bmp.PixelFormat == PixelFormat.Format1bppIndexed)
                 {
                     for (int i = 0; i < data.Height; i++)
                     {
+                        ptr = ptr1;
                         for (int j = 0; j < data.Width; )
                         {
                             Byte flag = 0x80;
@@ -475,7 +477,7 @@ namespace Tools
                             }
                             ptr++;
                         }
-                        ptr += data.Stride - (data.Width + 7) / 8;
+                        ptr1 += data.Stride; // - (data.Width + 7) / 8
                     }
                 }
                 else if (bmp.PixelFormat == PixelFormat.Format24bppRgb)
@@ -533,7 +535,7 @@ namespace Tools
                             if ((*ptr & flag) > 0) ycnt[i]++;
                             flag /= 2;
                         }
-                        ptr += data.Stride - (data.Width + 7) / 8;
+                        ptr += data.Stride - (data.Width) / 8;
                     }
                 }
                 else if (bmp.PixelFormat == PixelFormat.Format24bppRgb)
