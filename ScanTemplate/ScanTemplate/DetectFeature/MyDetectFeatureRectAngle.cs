@@ -11,10 +11,7 @@ namespace ScanTemplate
 {
     class MyDetectFeatureRectAngle
     {
-        private System.Drawing.Bitmap _src;
-        private List<subject> _listsubjects;
-        private List<Rectangle> _listFeatureRectangles;
-
+        public Rectangle CorrectRect { get; set; }
         public MyDetectFeatureRectAngle(System.Drawing.Bitmap bmp)
         {
             this._src = bmp;
@@ -25,7 +22,7 @@ namespace ScanTemplate
             _listFeatureRectangles = new List<Rectangle>();
             foreach (subject sub in _listsubjects)
             {
-                Rectangle r = DetectFeatureRect(sub);
+                Rectangle r = DetectFeatureRect(sub); 
                 if (r.Width == 0)
                     break;
                 _listFeatureRectangles.Add(r);
@@ -36,13 +33,17 @@ namespace ScanTemplate
                 return;
             }
             
-            Rectangle rr = new Rectangle( _listFeatureRectangles[0].Location, 
+            CorrectRect = new Rectangle( _listFeatureRectangles[0].Location, 
                 new Size( _listFeatureRectangles[1].Right-_listFeatureRectangles[0].Left,
                     _listFeatureRectangles[2].Bottom - _listFeatureRectangles[0].Top));
 
-            Bitmap newbmp = (Bitmap)_src.Clone(rr, _src.PixelFormat);
-            newbmp.Save("correct.tif");
-            ARTemplate.Template t = new ARTemplate.Template();
+            //Bitmap newbmp = (Bitmap)_src.Clone(CorrectRect, _src.PixelFormat);
+            //newbmp.Save("correct.tif");
+           
+        }
+        public bool Detected()
+        {
+            return CorrectRect.Width > 0;
         }
         private Rectangle DetectFeatureRect(subject sub)
         {
@@ -86,7 +87,6 @@ namespace ScanTemplate
             }
             return new Rectangle();
         }
-
         private bool DetectFeatureRectAngle4(Bitmap bmp, Rectangle r, int maxlen, ref Rectangle outrect)
         {
             Rectangle rectyline = r;
@@ -337,5 +337,9 @@ namespace ScanTemplate
         {
             return "(" + r.X + "," + r.Y + "," + r.Width + "," + r.Height + ")";
         }
+
+        private System.Drawing.Bitmap _src;
+        private List<subject> _listsubjects;
+        private List<Rectangle> _listFeatureRectangles;
     }
 }

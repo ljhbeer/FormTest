@@ -528,6 +528,11 @@ namespace ARTemplate
         }
         private SizeF img_scale;
         private Point img_location;
+
+        public double ImageWith(PictureBox p_PictureBox)
+        {
+            return GetPictureBoxZoomSize(p_PictureBox).Width * 1.0;
+        }
     }
     public class Paper
     {

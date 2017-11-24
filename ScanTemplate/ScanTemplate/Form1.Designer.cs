@@ -41,14 +41,14 @@
             this.listBox1.ItemHeight = 12;
             this.listBox1.Location = new System.Drawing.Point(17, 37);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(173, 304);
+            this.listBox1.Size = new System.Drawing.Size(212, 304);
             this.listBox1.TabIndex = 0;
             // 
             // buttonGo
             // 
             this.buttonGo.Location = new System.Drawing.Point(15, 349);
             this.buttonGo.Name = "buttonGo";
-            this.buttonGo.Size = new System.Drawing.Size(175, 32);
+            this.buttonGo.Size = new System.Drawing.Size(214, 32);
             this.buttonGo.TabIndex = 1;
             this.buttonGo.Text = "创建模板";
             this.buttonGo.UseVisualStyleBackColor = true;

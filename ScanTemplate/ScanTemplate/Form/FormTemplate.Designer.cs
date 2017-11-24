@@ -116,14 +116,13 @@
             // 导入模板IToolStripMenuItem
             // 
             this.导入模板IToolStripMenuItem.Name = "导入模板IToolStripMenuItem";
-            this.导入模板IToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.导入模板IToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
             this.导入模板IToolStripMenuItem.Text = "导入模板(&I)";
-            this.导入模板IToolStripMenuItem.Click += new System.EventHandler(this.导入模板IToolStripMenuItem_Click);
             // 
             // 导出模板OToolStripMenuItem
             // 
             this.导出模板OToolStripMenuItem.Name = "导出模板OToolStripMenuItem";
-            this.导出模板OToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.导出模板OToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
             this.导出模板OToolStripMenuItem.Text = "导出模板(&O)";
             this.导出模板OToolStripMenuItem.Click += new System.EventHandler(this.导出模板OToolStripMenuItem_Click);
             // 
@@ -145,7 +144,6 @@
             this.导入图片IToolStripMenuItem.Name = "导入图片IToolStripMenuItem";
             this.导入图片IToolStripMenuItem.Size = new System.Drawing.Size(187, 22);
             this.导入图片IToolStripMenuItem.Text = "导入图片(&P)";
-            this.导入图片IToolStripMenuItem.Click += new System.EventHandler(this.导入图片IToolStripMenuItem_Click);
             // 
             // toolStripMenuItemExportImg
             // 
@@ -195,19 +193,19 @@
             // 联系我们CToolStripMenuItem
             // 
             this.联系我们CToolStripMenuItem.Name = "联系我们CToolStripMenuItem";
-            this.联系我们CToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.联系我们CToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
             this.联系我们CToolStripMenuItem.Text = "联系我们(&C)";
             // 
             // 注册RToolStripMenuItem
             // 
             this.注册RToolStripMenuItem.Name = "注册RToolStripMenuItem";
-            this.注册RToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.注册RToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
             this.注册RToolStripMenuItem.Text = "注册(&R)";
             // 
             // 关于AToolStripMenuItem
             // 
             this.关于AToolStripMenuItem.Name = "关于AToolStripMenuItem";
-            this.关于AToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.关于AToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
             this.关于AToolStripMenuItem.Text = "关于(&A)";
             // 
             // toolStrip1
@@ -409,6 +407,7 @@
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "FormTemplate";
             this.Text = "阅卷";
+            this.Load += new System.EventHandler(this.FormTemplate_Load);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.toolStrip1.ResumeLayout(false);

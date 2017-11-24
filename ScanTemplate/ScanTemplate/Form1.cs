@@ -50,7 +50,15 @@ namespace ScanTemplate
             Bitmap bmp =(Bitmap) Bitmap.FromFile( nameList[0]);
             MyDetectFeatureRectAngle dr = new MyDetectFeatureRectAngle(bmp);
 
+            if (dr.Detected())
+            {
+                ARTemplate.Template art = new ARTemplate.Template(nameList[0], bmp, dr.CorrectRect);
 
+                this.Hide();
+                ARTemplate.FormTemplate f = new ARTemplate.FormTemplate(art);
+                f.ShowDialog();
+                this.Show();
+            }
         }
 
        

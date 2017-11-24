@@ -764,7 +764,18 @@ namespace Tools
             src.UnlockBits(databmp);
             gdt.UnlockBits(datagdt);
         }
-    
+
+        private static PixelFormat[] indexedPixelFormats = { PixelFormat.Undefined, PixelFormat.DontCare, PixelFormat.Format16bppArgb1555, PixelFormat.Format1bppIndexed, PixelFormat.Format4bppIndexed, PixelFormat.Format8bppIndexed };     
+        public static bool IsPixelFormatIndexed(PixelFormat imgPixelFormat)
+        {
+            foreach (PixelFormat pf in indexedPixelFormats)
+            {
+                if (pf.Equals(imgPixelFormat)) return true;
+            }
+
+            return false;
+        }
+
         private bool RemoveAndCheck(List<int> xposlen, int cnt)
         {
             if (xposlen.Count < cnt * 2) return false;

@@ -18,18 +18,22 @@ namespace ARTemplate
 
     public partial class FormTemplate : Form
     {
-        public FormTemplate()
+        public FormTemplate( Template t)
         {
             InitializeComponent();
+            template = t;
             Init();
             Reset();
         }
         private void Init()
         {
-            template = new Template();
             m_tn = new TreeNode();
             m_Imgselection = new Rectangle(0, 0, 0, 0);
             zoombox = new ZoomBox();
+        }
+        private void FormTemplate_Load(object sender, EventArgs e)
+        {
+            SetImage(template.Image);
         }
         private void SetImage(Bitmap image)
         {
@@ -41,7 +45,7 @@ namespace ARTemplate
         }
         private void Reset()
         {
-            template.Reset();
+            template.ResetData();
             m_tn.Nodes.Clear();
             //MT.ClearEvent();
             m_Imgselection = new Rectangle(0, 0, 0, 0);
@@ -63,26 +67,7 @@ namespace ARTemplate
             treeView1.Nodes.Add(m_tn);
             treeView1.ExpandAll();
         }
-        private void 导入模板IToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Reset();
-            OpenFileDialog OpenFileDialog2 = new OpenFileDialog();
-            OpenFileDialog2.FileName = "OpenFileDialog2";
-            OpenFileDialog2.Filter = "Xml files (*.xml)|*.xml";
-            OpenFileDialog2.Title = "Open xml file";
-            if (OpenFileDialog2.ShowDialog() == DialogResult.OK)
-            {
-                Template tc = new Template();
-                if (tc.Load(OpenFileDialog2.FileName))
-                {
-                    template = tc;
-                    RefreshTemplate();
-                    ////////////////////////////////////////
-                    MT = new MovetoTracker(pictureBox1);
-                    MT.MouseUp += new MouseEventHandler(pictureBox1_MouseUp);
-                }
-            }
-        }
+       
         private void 导出模板OToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveFileDialog saveFileDialog2 = new SaveFileDialog();
@@ -101,39 +86,7 @@ namespace ARTemplate
                     MessageBox.Show("Failed loading selected image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-        }
-        private void 导入图片IToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Reset();
-            if (!template.CheckEmpty())
-            {
-                DialogResult dr = MessageBox.Show("当前模板还有数据，导入图片需要清除原有数据，是否清除", "清除模板", MessageBoxButtons.YesNo);
-                if (dr == DialogResult.Yes)
-                {
-                    template.Reset();
-                    RefreshTemplate();
-                }
-                else
-                {
-                    return;
-                }
-            }
-            if (openFileDialog1.ShowDialog() == DialogResult.OK)
-            {
-                try
-                {
-                    Bitmap  bitmap_src =(Bitmap) Bitmap.FromFile(openFileDialog1.FileName);                      
-                    SetImage(bitmap_src);                  
-                    template.SetImagePath(openFileDialog1.FileName);
-                    template.SetImageSize(pictureBox1.Image.Size);
-                }
-                catch
-                {
-                    MessageBox.Show("导入图片失败，重新选择", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    template.Reset();
-                }
-            }
-        }
+        }       
         private void 定义考号KToolStripMenuItem_Click(object sender, EventArgs e)
         {
             toolStripButtonDId.PerformClick();
@@ -158,7 +111,7 @@ namespace ARTemplate
             Image img = (Image)pictureBox1.Image.Clone();
 
 
-            if (IsPixelFormatIndexed(img.PixelFormat))
+            if (Tools.BitmapTools.IsPixelFormatIndexed(img.PixelFormat))
             {
                 Bitmap bmp = new Bitmap(img.Width, img.Height, PixelFormat.Format32bppArgb);
                 using (Graphics g = Graphics.FromImage(bmp))
@@ -214,14 +167,12 @@ namespace ARTemplate
                 m_act = Act.SeclectionToWhite;
             toolStripButton_Click(sender, e);
         }
-
         private void toolStripButtonToDark_Click(object sender, EventArgs e)
         {
             if (!((ToolStripButton)sender).Checked)
                 m_act = Act.SeclectionToDark;
             toolStripButton_Click(sender, e);
         }
-
         private void toolStripButtonZoomin_Click(object sender, EventArgs e)
         {
             if (!((ToolStripButton)sender).Checked)
@@ -233,6 +184,7 @@ namespace ARTemplate
             if (!((ToolStripButton)sender).Checked)
                 ((ToolStripButton)sender).Checked = false;
             m_act = Act.ZoomMouse;
+            toolStripButton_Click(sender, e);
         }
         private void toolStripButtonZoomout_Click(object sender, EventArgs e)
         {
@@ -282,7 +234,14 @@ namespace ARTemplate
                 m_act = Act.DefineUnChoose;
             toolStripButton_Click(sender, e);
         }
-       
+        private void toolStripButtonZoomNone_Click(object sender, EventArgs e)
+        {
+            // zoombox.Reset();
+            if (!((ToolStripButton)sender).Checked)
+                ((ToolStripButton)sender).Checked = false;
+            double rat =  zoombox.ImageWith(pictureBox1) /  pictureBox1.Image.Width * 1.0; 
+            Zoomrat(rat, new Point(pictureBox1.Width / 2, pictureBox1.Height / 2));
+        }       
         private void CompleteSelection(bool bcomplete)
         {
             if (bcomplete)
@@ -300,11 +259,6 @@ namespace ARTemplate
                 }
             }
             pictureBox1.Invalidate();
-        }
-
-        private void toolStripButtonZoomNone_Click(object sender, EventArgs e)
-        {
-            //
         }
        
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
@@ -708,33 +662,33 @@ namespace ARTemplate
                     template.AddSingleChoiceArea((SingleChoiceArea)n.Tag);
                 }
             }
-            foreach (TreeNode n in m_tn.Nodes["非选择题"].Nodes)
-            {
-                if (n.Tag != null)
-                {
-                    template.AddUnChoose((UnChoose)n.Tag);
-                }
-            }
+            //foreach (TreeNode n in m_tn.Nodes["非选择题"].Nodes)
+            //{
+            //    if (n.Tag != null)
+            //    {
+            //        template.AddUnChoose((UnChoose)n.Tag);
+            //    }
+            //}
             if (m_tn.Nodes["特征点"].Nodes.Count >= 3)
             {
-                TriAngleFeature p0, p1, p2;
-                p0 = p1 = p2 = null;
-                foreach (TreeNode n in m_tn.Nodes["特征点"].Nodes)
-                {
-                    if (n.Tag != null)
-                    {
-                        TriAngleFeature t = (TriAngleFeature)n.Tag;
-                        if (t.Direction == 0)
-                            p0 = t;
-                        else if (t.Direction == 1)
-                            p1 = t;
-                        else if (t.Direction == 2)
-                            p2 = t;
-                    }
-                }
-                if (p0 == null || p1 == null || p2 == null || template == null)
-                    return;
-                template.AddFeaturePoints(p0, p1, p2);
+                //TriAngleFeature p0, p1, p2;
+                //p0 = p1 = p2 = null;
+                //foreach (TreeNode n in m_tn.Nodes["特征点"].Nodes)
+                //{
+                //    if (n.Tag != null)
+                //    {
+                //        TriAngleFeature t = (TriAngleFeature)n.Tag;
+                //        if (t.Direction == 0)
+                //            p0 = t;
+                //        else if (t.Direction == 1)
+                //            p1 = t;
+                //        else if (t.Direction == 2)
+                //            p2 = t;
+                //    }
+                //}
+                //if (p0 == null || p1 == null || p2 == null || template == null)
+                //    return;
+                //template.AddFeaturePoints(p0, p1, p2);
             }
         }
         private void ShowMessage(string message)
@@ -756,27 +710,5 @@ namespace ARTemplate
         private Point crop_startpoint;
         private ZoomBox zoombox;
         private Template template;
-
-
-
-        private static PixelFormat[] indexedPixelFormats = { PixelFormat.Undefined, PixelFormat.DontCare, PixelFormat.Format16bppArgb1555, PixelFormat.Format1bppIndexed, PixelFormat.Format4bppIndexed, PixelFormat.Format8bppIndexed };
-
-        /// <summary>
-        /// 判断图片的PixelFormat 是否在 引发异常的 PixelFormat 之中
-        /// 无法从带有索引像素格式的图像创建graphics对象
-        /// </summary>
-        /// <param name="imgPixelFormat">原图片的PixelFormat</param>
-        /// <returns></returns>
-        private static bool IsPixelFormatIndexed(PixelFormat imgPixelFormat)
-        {
-            foreach (PixelFormat pf in indexedPixelFormats)
-            {
-                if (pf.Equals(imgPixelFormat)) return true;
-            }
-
-            return false;
-        }
-
-     
     }
 }

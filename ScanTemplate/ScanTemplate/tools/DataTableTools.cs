@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Data;
 using System.Windows.Forms;
+using System.Drawing;
 
 namespace Tools
 {
@@ -104,6 +105,41 @@ namespace Tools
             }
             outstr = outstr.Replace(",\r\n", "\r\n");
             return outstr.ToString();
+        }
+    }
+    public class StringTools
+    {
+        public static Point StringToPoint(string str)
+        {
+            String[] vstr = str.Split(',');
+            if (vstr.Count() != 2)
+                throw new NotImplementedException();
+            int x, y;
+            int.TryParse(vstr[0], out x);
+            int.TryParse(vstr[1], out y);
+            return new Point(x, y);
+        }
+        public static Size StringToSize(string str)
+        {
+            String[] vstr = str.Split(',');
+            if (vstr.Count() != 2)
+                throw new NotImplementedException();
+            int x, y;
+            int.TryParse(vstr[0], out x);
+            int.TryParse(vstr[1], out y);
+            return new Size(x, y);
+        }
+        public static Rectangle StringToRectangle(string str)
+        {
+            String[] vstr = str.Split(',');
+            if (vstr.Count() != 4)
+                throw new NotImplementedException();
+            int x, y, w, h;
+            int.TryParse(vstr[0], out x);
+            int.TryParse(vstr[1], out y);
+            int.TryParse(vstr[2], out w);
+            int.TryParse(vstr[3], out h);
+            return new Rectangle(x, y, w, h);
         }
     }
 }
