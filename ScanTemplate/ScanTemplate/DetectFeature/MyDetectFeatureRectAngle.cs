@@ -20,9 +20,15 @@ namespace ScanTemplate
                 new subject("右上",new  Rectangle(bmp.Width-300, 80, 300, 100)),
                 new subject("左下",new  Rectangle(50, bmp.Height-280, 250, 100)) };
             _listFeatureRectangles = new List<Rectangle>();
+            Detect3Point();
+            //Bitmap newbmp = (Bitmap)_src.Clone(CorrectRect, _src.PixelFormat);
+            //newbmp.Save("correct.tif");
+        }
+        public void Detect3Point()
+        {
             foreach (subject sub in _listsubjects)
             {
-                Rectangle r = DetectFeatureRect(sub); 
+                Rectangle r = DetectFeatureRect(sub);
                 if (r.Width == 0)
                     break;
                 _listFeatureRectangles.Add(r);
@@ -32,15 +38,21 @@ namespace ScanTemplate
                 MessageBox.Show("特征点检测失败");
                 return;
             }
-            
-            CorrectRect = new Rectangle( _listFeatureRectangles[0].Location, 
-                new Size( _listFeatureRectangles[1].Right-_listFeatureRectangles[0].Left,
-                    _listFeatureRectangles[2].Bottom - _listFeatureRectangles[0].Top));
 
-            //Bitmap newbmp = (Bitmap)_src.Clone(CorrectRect, _src.PixelFormat);
-            //newbmp.Save("correct.tif");
-           
+            CorrectRect = new Rectangle(_listFeatureRectangles[0].Location,
+                new Size(_listFeatureRectangles[1].Right - _listFeatureRectangles[0].Left,
+                    _listFeatureRectangles[2].Bottom - _listFeatureRectangles[0].Top));
         }
+        public Rectangle Detected(Bitmap bmp)
+        {
+            Rectangle r = DetectFeatureRect(_listsubjects[0]);
+            if (r.Width == 0)
+                return new Rectangle();
+            r.Width = CorrectRect.Width;
+            r.Height = CorrectRect.Height;
+            return r;
+        }
+
         public bool Detected()
         {
             return CorrectRect.Width > 0;
@@ -90,8 +102,7 @@ namespace ScanTemplate
         private bool DetectFeatureRectAngle4(Bitmap bmp, Rectangle r, int maxlen, ref Rectangle outrect)
         {
             Rectangle rectyline = r;
-            int[] yycnt = new int[r.Width];
-            BitmapTools.CountYPixsum(bmp, rectyline, out yycnt);
+            int[] yycnt = BitmapTools.CountYPixsum(bmp, rectyline);
             List<int> ycnt = yycnt.Select(rec => 2 - rec).ToList();
 
             //count Xpoint
@@ -130,8 +141,7 @@ namespace ScanTemplate
         private bool DetectFeatureRectAngle3(Bitmap bmp, Rectangle r, int maxlen, out Rectangle outrect)
         {
             Rectangle rectxline = r;
-            int[] xxcnt = new int[r.Width];
-            BitmapTools.CountXPixsum(bmp, rectxline, out xxcnt);
+            int[] xxcnt =  BitmapTools.CountXPixsum(bmp, rectxline);
             List<int> xcnt = xxcnt.Select(rec => 2 - rec).ToList();
 
             //count Xpoint
@@ -173,10 +183,8 @@ namespace ScanTemplate
             rectxline.Offset(rect.Location);
             rectyline.Offset(rect.Location);
 
-            int[] xxcnt = new int[rect.Width];
-            int[] yycnt = new int[rect.Height];
-            BitmapTools.CountXPixsum(bmp, rectxline, out xxcnt);
-            BitmapTools.CountYPixsum(bmp, rectyline, out yycnt);
+            int[] xxcnt = BitmapTools.CountXPixsum(bmp, rectxline);
+            int[] yycnt = BitmapTools.CountYPixsum(bmp, rectyline);
             List<int> xcnt = xxcnt.Select(rec => 2 - rec).ToList();
             List<int> ycnt = yycnt.Select(rec => 2 - rec).ToList();
 
@@ -240,12 +248,9 @@ namespace ScanTemplate
         private Rectangle DetectFeatureRectAngle(Bitmap bmp) //由图片限定
         {
             Size blacktag = new Size(33, 33);
-            Rectangle r = new Rectangle(0, 0, bmp.Width, bmp.Height);
-            int[] xxcnt = new int[r.Width];
-            int[] yycnt = new int[r.Height];
-            BitmapTools.CountXPixsum(bmp, r, out xxcnt);
-            BitmapTools.CountYPixsum(bmp, r, out yycnt);
-
+            Rectangle r = new Rectangle(0, 0, bmp.Width, bmp.Height);            
+            int[] xxcnt = BitmapTools.CountXPixsum(bmp, r);
+            int[] yycnt = BitmapTools.CountYPixsum(bmp, r);
             List<int> xcnt = xxcnt.Select(rec =>
             {
                 if ((r.Height - rec) > blacktag.Height / 3)
@@ -341,5 +346,6 @@ namespace ScanTemplate
         private System.Drawing.Bitmap _src;
         private List<subject> _listsubjects;
         private List<Rectangle> _listFeatureRectangles;
+
     }
 }

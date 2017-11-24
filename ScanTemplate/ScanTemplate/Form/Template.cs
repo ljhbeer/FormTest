@@ -14,7 +14,7 @@ namespace ARTemplate
         public Template(string imgpath, Bitmap bmp, Rectangle CorrectRect)
         {
             this._imagefilename = imgpath;
-            this._src = bmp;
+            this._src = bmp.Clone( CorrectRect, bmp.PixelFormat);
             this._correctrect = CorrectRect;
             m_singlechoice = new List<SingleChoice>();
             m_singlechoicearea = new List<SingleChoiceArea>();
@@ -161,10 +161,10 @@ namespace ARTemplate
                 xmlDoc.Load(xmlFileName);
                 _imagefilename = xmlDoc.SelectSingleNode(NodeName + "/BASE/PATH").InnerText;
                 Size imgsize =Tools.StringTools. StringToSize(xmlDoc.SelectSingleNode(NodeName + "/BASE/SIZE").InnerText);
-                Bitmap bitmap =(Bitmap) Bitmap.FromFile(_imagefilename);
-                if (bitmap.Size != imgsize)
-                    return false;
-                _src = bitmap;
+                //////Bitmap bitmap =(Bitmap) Bitmap.FromFile(_imagefilename);
+                //////if (bitmap.Size != imgsize)
+                //////    return false;
+                //////_src = bitmap;
 
                 //XmlNodeList fplist = xmlDoc.SelectNodes(NodeName + "/FEATUREPOINTS/*");
                 XmlNodeList khlist = xmlDoc.SelectNodes(NodeName + "/KAOHAOCHOICES/*");

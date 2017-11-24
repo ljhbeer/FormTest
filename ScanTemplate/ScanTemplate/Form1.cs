@@ -58,10 +58,41 @@ namespace ScanTemplate
                 ARTemplate.FormTemplate f = new ARTemplate.FormTemplate(art);
                 f.ShowDialog();
                 this.Show();
+
+                FileInfo fi = new FileInfo(nameList[0]);
+                string dir = fi.Directory.FullName.Replace("LJH\\","LJH\\Correct\\");
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                StringBuilder sb = new StringBuilder();
+                foreach (string s in nameList)
+                {
+                    Bitmap bmp1 = (Bitmap) Bitmap.FromFile( s );
+                    //MyDetectFeatureRectAngle dr = new MyDetectFeatureRectAngle(bmp);
+                    Rectangle CorrectRect = dr.Detected(bmp1);
+                    sb.Append(s + "," + Recttostring( CorrectRect) +",");
+                    if (CorrectRect.Width > 0)
+                    {
+                        bmp1 =(Bitmap) bmp1.Clone(CorrectRect,bmp1.PixelFormat);
+                        bmp1.Save(s.Replace("LJH\\", "LJH\\Correct\\"));
+                        bmp1.Dispose();
+                        bmp1 = null;
+                        //统计选择题
+                    }
+                    else
+                    {
+                        //检测失败
+                    }
+                    sb.AppendLine();
+                }
+                File.WriteAllText("allimport.txt", sb.ToString());
             }
         }
 
-       
+        private string Recttostring(Rectangle r)
+        {
+            return "(" + r.X + "," + r.Y + "," + r.Width + "," + r.Height + ")";
+        }
         private static string GetLastestSubDirectory(string path)
         {
             List<string> sudirects = GetLastestSubDirectorys(path);               

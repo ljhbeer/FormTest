@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Drawing.Imaging;
-
+using Tools;
 namespace ARTemplate
 {
     // X 水平  Y垂直
@@ -17,20 +17,20 @@ namespace ARTemplate
             this.choicesize = new Size(0,0);
         }
 
-        internal bool DetectKH(Boolean vertical) //垂直排列
+        public bool DetectKH(Boolean vertical) //垂直排列
         {
-            int[] ycnt, xcnt;
             List<int> xposlen, yposlen;
             Rectangle rt = new Rectangle(0, 0, _src.Size.Width, _src.Size.Height);
-            CountYPixsum(_src, rt, out ycnt);
-            CountXPixsum(_src, rt, out xcnt);
+            int[] ycnt = BitmapTools.CountYPixsum(_src, rt);
+            int[] xcnt = BitmapTools.CountXPixsum(_src, rt);
+           
             ycnt = ycnt.Select(r => _src.Width - r).ToArray();
             xcnt = xcnt.Select(r => _src.Height - r).ToArray();
 
             int ymin = (int)Math.Ceiling(ycnt.Where(r => r > 0).Average() / 10);
             int xmin = (int)Math.Ceiling(xcnt.Where(r => r > 0).Average() / 10);
-            yposlen = SectionCount(ycnt, ymin, _src.Width, 2);
-            xposlen = SectionCount(xcnt, xmin, _src.Height, 2);
+            yposlen = BitmapTools.SectionCount(ycnt, ymin, _src.Width, 2);
+            xposlen = BitmapTools.SectionCount(xcnt, xmin, _src.Height, 2);
             if (xposlen.Count == 0 || yposlen.Count == 0)
                 return false;
             MergeSection(yposlen);
@@ -38,7 +38,7 @@ namespace ARTemplate
 
             if (vertical)
             {
-                xposlen = SectionCount(xcnt, xmin, _src.Height, 2);
+                xposlen = BitmapTools.SectionCount(xcnt, xmin, _src.Height, 2);
                 if (RemoveAndCheck(xposlen, choicecount ) && RemoveAndCheck(yposlen, 10))
                 {
                     m_choicepoint = new List<List<Point>>();
@@ -98,19 +98,21 @@ namespace ARTemplate
             return false;
         }
         public bool Detect()
-        {
-            int[] ycnt,xcnt;                  
-            List<int> xposlen,yposlen;            
-            Rectangle rt = new Rectangle(0,0,_src.Size.Width,_src.Size.Height);
-            CountYPixsum(_src, rt, out ycnt);
-            CountXPixsum(_src, rt, out xcnt);      
+        {               
+            List<int> xposlen,yposlen;
+            Rectangle rt = new Rectangle(0, 0, _src.Size.Width, _src.Size.Height);
+            int[] ycnt = BitmapTools.CountYPixsum(_src, rt);
+            int[] xcnt = BitmapTools.CountXPixsum(_src, rt);
             ycnt = ycnt.Select(r => _src.Width - r).ToArray();
             xcnt = xcnt.Select(r => _src.Height - r).ToArray();
             
-            int ymin =(int) Math.Ceiling( ycnt.Where(r => r > 0).Average() / 8);
-            int xmin =(int) Math.Ceiling( xcnt.Where(r => r > 0).Average() / 8);
-            yposlen = SectionCount(ycnt, ymin, _src.Width, 2);
-            xposlen = SectionCount(xcnt, xmin, _src.Height, 2);           
+            int ymin =(int) Math.Ceiling( ycnt.Where(r => r > 0).Average() / 4);
+            int xmin =(int) Math.Ceiling( xcnt.Where(r => r > 0).Average() / 4);
+            ycnt = ycnt.Select(r => r>ymin?r :0 ).ToArray();
+            xcnt = xcnt.Select(r => r>xmin?r :0).ToArray();
+
+            yposlen = BitmapTools.SectionCount(ycnt, ymin, _src.Width, 2);
+            xposlen = BitmapTools.SectionCount(xcnt, xmin, _src.Height, 2);           
             if (xposlen.Count == 0 || yposlen.Count == 0)
                 return false;
             MergeSection(yposlen);
@@ -265,570 +267,5 @@ namespace ARTemplate
         private int choicecount;
         private Size choicesize;
         private List<List<Point>> m_choicepoint;
-        public static int[] bitcount;
-        static DetectChoiceArea ( )
-        {
-            bitcount = new int[256];
-
-            for (int i = 0; i < 256; i++)
-            {
-                int flag = 1;
-                for (int j = 0; j < 8; j++)
-                {
-                    if( (i & flag)>0) bitcount[i]++;
-                    flag *= 2;
-                }
-
-            }
-
-         }
-        private static void NewComputeLinepos(int[] cnt, out List<int> ylinepos)
-        {
-            List<int> pos = SectionCount(cnt,2,200,5);
-            ylinepos = new List<int>();
-            List<int> lcnt = new List<int>(cnt);
-            for (int i = 0; i < pos.Count; i += 2)
-            {//
-                int avg =(int )( lcnt.GetRange(pos[i], pos[i + 1]).Average()*1.3);
-                for (int j = pos[i]; j < pos[i] + 3; j++)
-                {
-                    if (lcnt[j] > avg)
-                    {
-                        ylinepos.Add(j);
-                        break;
-                    }
-                }
-                for (int j = pos[i]+pos[i+1]-3; j < pos[i] + pos[i+1]; j++)
-                {
-                    if (lcnt[j] > avg)
-                    {
-                        ylinepos.Add(j);
-                        break;
-                    }
-                }
-            }
-        }
-        private static List<int> SectionCount(int[] cnt,int min, int max, int minlen)// [0: startpos  1:length]
-        {
-            int len = 0;
-            int spos = 0;
-            List<int> pos = new List<int>();
-            bool flag = false;
-            for (int i = 0; i < cnt.Count(); i++)
-            {
-                if (cnt[i] > min && cnt[i]<max)
-                {
-                    if (flag == false)
-                    {
-                        spos =  i;
-                        len = 0;
-                    }
-                    else
-                    {
-                        len++;
-                    }
-                    flag = true;
-                }
-                else
-                {
-                    flag = false;
-                    if (len >= minlen)
-                    {//
-                        pos.Add(spos);
-                        pos.Add(len+1);
-                        len = 0;
-                    }
-                }
-            }
-            return pos;
-        }
-        public static void DrawRect(Rectangle r, BitmapData data, Color c)
-        {
-            if (r.X > 0 && r.Right < data.Width && r.Y > 0 && r.Bottom < data.Height
-                && r.Width > 2 && r.Width < data.Width && r.Height > 2 && r.Height < data.Height)
-            {
-                unsafe
-                {
-                    byte* ptr = (byte*)(data.Scan0);
-                    byte* ptrfirst = ptr;
-                    //TB
-                    ptr = ptrfirst + data.Stride * r.Y + r.X * 3;
-                    for (int j = 0; j < r.Width; j++)
-                    {
-                        ptr[0] = c.B;
-                        ptr[1] = c.G;
-                        ptr[2] = c.R;
-                        ptr += 3;
-                    }
-                    ptr = ptrfirst + data.Stride * r.Bottom + r.X * 3;              
-                    for (int j = 0; j < r.Width; j++)
-                    {
-                        ptr[0] = c.B;
-                        ptr[1] = c.G;
-                        ptr[2] = c.R;
-                        ptr += 3;
-                    }
-                    //LR   
-                    ptr = ptrfirst + data.Stride * r.Y + r.X * 3;
-                    for (int i = 0; i < r.Height; i++)
-                    {
-                        ptr[0] = c.B;
-                        ptr[1] = c.G;
-                        ptr[2] = c.R;
-                        ptr += data.Stride;
-                    }
-                    ptr = ptrfirst + data.Stride * r.Y + r.Right * 3;
-                    for (int i = 0; i < r.Height; i++)
-                    {
-                        ptr[0] = c.B;
-                        ptr[1] = c.G;
-                        ptr[2] = c.R;
-                        ptr += data.Stride;
-                    }
-                }
-            }
-        }
-        private static void DrawLine(Rectangle r, BitmapData data,Color c)
-        {
-            unsafe
-            {
-                byte* ptr = (byte*)(data.Scan0);
-                byte* ptrfirst = ptr;
-                //TB
-                ptr = ptrfirst + data.Stride * r.Y + r.X * 3;
-                for (int j = 0; j < r.Width; j++)
-                {
-                    ptr[0] = c.R;
-                    ptr[1] = c.G;
-                    ptr[2] = c.B;
-                    ptr += 3;
-                }
-            }
-        }
-        public static void Gray(Bitmap bmp)
-        {
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height),
-                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-            //循环处理 
-            unsafe
-            {
-                byte temp = 0;
-                byte* ptr = (byte*)(data.Scan0);
-                for (int i = 0; i < data.Height; i++)
-                {
-                    for (int j = 0; j < data.Width; j++)
-                    {
-                        // write the logic implementation here 
-                        temp = (byte)(0.299 * ptr[2] + 0.587 * ptr[1] + 0.114 * ptr[0]);
-                        ptr[0] = ptr[1] = ptr[2] = temp;
-                        ptr += 3;
-                    }
-                    ptr += data.Stride - data.Width * 3;
-                }
-            }
-            bmp.UnlockBits(data);
-        }
-        public static void Fill(Bitmap bmp, int color)
-        {
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height),
-                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-            //循环处理 
-            unsafe
-            {
-                byte* ptr = (byte*)(data.Scan0);
-                for (int i = 0; i < data.Height; i++)
-                {
-                    for (int j = 0; j < data.Width; j++)
-                    {
-                        ptr[0] = ptr[1] = ptr[2] = (byte)color;
-                        ptr += 3;
-                    }
-                    ptr += data.Stride - data.Width * 3;
-                }
-            }
-            bmp.UnlockBits(data);
-        }
-        private static int[] CountImgXBlackCnt(Bitmap bmp, Rectangle r)
-        {
-            int[] rv = new int[r.Width];
-            BitmapData data = bmp.LockBits(r, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-            unsafe
-            {
-                byte* ptr = (byte*)(data.Scan0);
-                byte* ptr0 = ptr;
-                for (int i = 0; i < data.Height; i++)
-                {
-                    for (int j = 0; j < data.Width; j++)
-                    {
-                        if (ptr[0] == 0) rv[j]++;
-                        ptr += 3;
-                    }
-                    ptr += data.Stride - data.Width * 3;
-                }
-            }
-            bmp.UnlockBits(data);
-            return rv;
-        }
-        public static int CountRectBlackcnt(Bitmap bmp, Rectangle r)
-        {
-            int cnt = 0;
-            BitmapData data = bmp.LockBits(r, ImageLockMode.ReadWrite, bmp.PixelFormat );
-            unsafe
-            {
-                byte* ptr = (byte*)(data.Scan0);
-                byte* ptr0 = ptr;
-                if (bmp.PixelFormat == PixelFormat.Format1bppIndexed)
-                {
-                    for (int i = 0; i < data.Height; i++)
-                    {
-                        for (int j = 0; j < data.Width; )
-                        {
-                            Byte flag = 0x80;
-                            for (int k = 0; k < 8 && j < data.Width; k++, j++)
-                            {
-                                if ((*ptr & flag) > 0) cnt++;
-                                flag /= 2;
-                            }
-                            ptr++;
-                        }
-                        ptr += data.Stride - (data.Width + 7) / 8;
-                    }
-                }
-                else if (bmp.PixelFormat == PixelFormat.Format24bppRgb)
-                {
-                    for (int i = 0; i < data.Height; i++)
-                    {
-                        for (int j = 0; j < data.Width; j++)
-                        {
-                            cnt += ptr[0];
-                            ptr += 3;
-                        }
-                        ptr += data.Stride - data.Width * 3;
-                    }
-                }
-                else if (bmp.PixelFormat == PixelFormat.Format32bppArgb)
-                {
-                    for (int i = 0; i < data.Height; i++)
-                    {
-                        for (int j = 0; j < data.Width; j++)
-                        {
-                            cnt += ptr[1];
-                            ptr += 4;
-                        }
-                        ptr += data.Stride - data.Width * 4;
-                    }
-                }
-            }
-            bmp.UnlockBits(data);
-            return r.Width*r.Height - cnt;
-        }
-        private static void CountXPixsum(Bitmap bmp, Rectangle r, out int[] xcnt)
-        {
-            xcnt = new int[r.Size.Width];
-            BitmapData data = bmp.LockBits(r, ImageLockMode.ReadWrite, bmp.PixelFormat);
-            unsafe
-            {
-                byte* ptr = (byte*)(data.Scan0);
-                if (bmp.PixelFormat == PixelFormat.Format1bppIndexed)
-                {
-                    for (int i = 0; i < data.Height; i++)
-                    {
-                        for (int j = 0; j < data.Width ; )
-                        {
-                            Byte flag= 0x80;
-                            for (int k = 0; k < 8 && j < data.Width; k++, j++)
-                            {
-                                if ((*ptr & flag) > 0) xcnt[j]++;
-                                flag /= 2;
-                            }
-                            ptr++;
-                        } 
-                        ptr += data.Stride - (data.Width+7) / 8;
-                    }
-                }
-                else if (bmp.PixelFormat == PixelFormat.Format24bppRgb)
-                {
-                    for (int i = 0; i < data.Height; i++)
-                    {
-                        for (int j = 0; j < data.Width; j++)
-                        { 
-                            xcnt[j] += ptr[0];
-                            ptr += 3;
-                        }
-                        ptr += data.Stride - data.Width * 3;
-                    }
-                    for (int i = 0; i < xcnt.Length; i++)
-                        xcnt[i] /= 255;
-                }
-                else if (bmp.PixelFormat == PixelFormat.Format32bppArgb)
-                {
-                    for (int i = 0; i < data.Height; i++)
-                    {
-                        for (int j = 0; j < data.Width; j++)
-                        {
-                            xcnt[j] += ptr[1];
-                            ptr += 4;
-                        }
-                        ptr += data.Stride - data.Width * 4;
-                    }
-                    for (int i = 0; i < xcnt.Length; i++)
-                        xcnt[i] /= 255;
-                }
-            }
-            bmp.UnlockBits(data);
-        }
-        private static void CountYPixsum(Bitmap bmp, Rectangle r, out int[] ycnt)
-        {
-            ycnt = new int[r.Size.Height];
-            BitmapData data = bmp.LockBits(r, ImageLockMode.ReadWrite, bmp.PixelFormat);
-            unsafe
-            {
-                byte* ptr = (byte*)(data.Scan0);
-
-                if (bmp.PixelFormat == PixelFormat.Format1bppIndexed)
-                {
-                    for (int i = 0; i < data.Height; i++)
-                    {
-                        for (int j = 0; j < data.Width/8; j++)
-                        {
-                            ycnt[i] += bitcount[ ptr[0] ];
-                            ptr ++;
-                        }
-                        byte flag = 128;
-                        for (int j = 0; j < data.Width % 8; j++)
-                        {
-                            if( (*ptr & flag) > 0) ycnt[i]++;
-                            flag /=2;
-                        }
-                        ptr += data.Stride - data.Width/8;
-                    }
-                }
-                else if (bmp.PixelFormat == PixelFormat.Format24bppRgb)
-                {
-                    for (int i = 0; i < data.Height; i++)
-                    {
-                        for (int j = 0; j < data.Width; j++)
-                        { // write the logic implementation here 
-                            ycnt[i] += ptr[0];
-                            ptr += 3;
-                        }
-                        ptr += data.Stride - data.Width * 3;
-                    }
-                    for (int i = 0; i < ycnt.Length; i++)
-                        ycnt[i] /= 255;
-                }
-                else if (bmp.PixelFormat == PixelFormat.Format32bppArgb)
-                {
-                    for (int i = 0; i < data.Height; i++)
-                    {
-                        for (int j = 0; j < data.Width; j++)
-                        { // write the logic implementation here 
-                            ycnt[i] += ptr[1];
-                            ptr += 4;
-                        }
-                        ptr += data.Stride - data.Width * 4;
-                    }
-                    for (int i = 0; i < ycnt.Length; i++)
-                        ycnt[i] /= 255;
-                }
-            }
-            bmp.UnlockBits(data);
-        }
-        private static void ComputeLinepos(int[] xcnt, out List<int> linepos)
-        {//从0开始
-            linepos = new List<int>();
-            int[] cnt;
-            cnt = new int[xcnt.Length];
-            //int b = photorect.Left ,e = photorect.Right ; 
-            for (int i = 2; i < xcnt.Length; i++)
-            {
-                cnt[i] = xcnt[i] - xcnt[i - 2];
-            }
-            cnt[0] = cnt[1] = 0;
-
-            int[] maxpos, minpos, flag;
-            maxpos = new int[xcnt.Length / 20];
-            minpos = new int[xcnt.Length / 20];
-            flag = new int[xcnt.Length];
-            for (int i = 0; i < maxpos.Length; i++)
-            {
-                maxpos[i] = Max(cnt, i * 20, 20);
-                minpos[i] = Min(cnt, i * 20, 20);
-            }
-
-            var queryResults = from n in maxpos select n;
-            int maxavg = (int)queryResults.Average() + 1;
-            queryResults = from n in minpos select n;
-            int minavg = (int)queryResults.Average() + 1;
-            // if(debug&2 && option&1) std::printf("X-maxavg:%d  minavg:%d\n",maxavg,minavg);
-            if (maxavg < 5) maxavg = 5;
-            if (minavg > -5) minavg = -5;
-
-            for (int x = 2; x < xcnt.Length - 1; x++)
-            {
-                if ((cnt[x] > maxavg || cnt[x + 1] > maxavg)
-                  && (cnt[x] < -minavg || cnt[x - 1] < -minavg))
-                {
-                    flag[x] = 1;
-                    linepos.Add(x);
-                    x++;
-                }
-            }
-        }
-        private static int Min(int[] cnt, int bindex, int len)
-        {
-            int min = cnt[bindex];
-            for (int i = 1; i < len; i++)
-            {
-                if (min > cnt[i + bindex]) min = cnt[i + bindex];
-            }
-            return min;
-        }
-        private static int Max(int[] cnt, int bindex, int len)
-        {
-            int max = cnt[bindex];
-            for (int i = 1; i < len; i++)
-            {
-                if (max < cnt[i + bindex]) max = cnt[i + bindex];
-            }
-            return max;
-        }
-        private static int GetMaxPos(int a, int b, int c)
-        {
-            int max = a > b ? a : b;
-            max = max > c ? max : c;
-            if (a == max) return 0;
-            if (b == max) return 1;
-            if (c == max) return 2;
-            throw new NotImplementedException();
-        }
-        private static int GetMinPos(int minpos, int[] cnt)
-        {
-            if (minpos < 3 || minpos > cnt.Length - 3) return minpos;
-            int min = Min(cnt, minpos - 3, 6);
-            for (int i = minpos - 3; i < minpos + 4; i++)
-                if (min == cnt[i]) return i;
-            return 0;
-        }
-        private static int GetMaxPos(int maxpos, int[] cnt)
-        {
-            if (maxpos < 3 || maxpos > cnt.Length - 3) return maxpos;
-            int max = Max(cnt, maxpos - 3, 6);
-            for (int i = maxpos - 3; i < maxpos + 4; i++)
-                if (max == cnt[i]) return i;
-            return 0;
-        }
-        private static void CountGridOption(Bitmap gdt, Rectangle r, int[,] blackcnt)
-        {
-            int H = blackcnt.GetLength(1);
-            int W = blackcnt.GetLength(0);
-           // ShowForm s = new ShowForm();
-            for (int x = 0; x < W; x++)
-            {
-                for (int y = 0; y < H; y++)
-                {
-                    int xcent = (int)((x + 0.5) * r.Width / W + r.X);
-                    int ycent = (int)((y + 0.5) * r.Height / H + r.Y);
-                    Rectangle nr = new Rectangle(xcent - 5, ycent - 5, 10, 10);//
-                    blackcnt[x, y] = CountRectBlackcnt(gdt, nr);
-                    //if ((debug & 1024) != 0)
-                    //{
-                    //    BitmapData data = gdt.LockBits(new Rectangle(0, 0, gdt.Width, gdt.Height),
-                    //                        ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-                    //    DrawRect(nr, data, Color.Green);//debug
-                    //    gdt.UnlockBits(data);
-                    //    s.ShowImg(gdt);
-                    //}
-                }
-            }
-        }
-        private static bool TestRightOption(int[,] blackcnt, Rectangle r, ref  int value)
-        {
-            List<int> vcnt = new List<int>();
-            if (r.Width == 1)
-            { // 选项向下
-                for (int i = 0; i < r.Height; i++) vcnt.Add(blackcnt[r.X, i + r.Y]);
-            }
-            else if (r.Height == 1)
-            {
-                for (int i = 0; i < r.Width; i++) vcnt.Add(blackcnt[i + r.X, r.Y]);
-            }
-            else { value = -1; return false; }
-
-            int max = vcnt.Max();
-            int sum = vcnt.Sum();
-            int cnt = vcnt.Count(n => n > 50);
-            int maxpos = vcnt.FindIndex(n => n == max);
-
-            value = maxpos;
-            if (cnt == 1)
-            {
-                return true;
-            }	//单选， 暂时不支持多选
-            if (max >= 40 && max > sum - max)
-            {
-                return true;
-            }
-            else if (max >= 25 && max > 2 * (sum - max))
-            {
-                return true;
-            }
-            value = -1;
-            return false;
-        }
-        private static int GetstatisticGamma(Bitmap bmp, int pergamma, Rectangle r)
-        {
-            int[] colorcnt = new int[256];
-            int sum = 0;
-            int alltotal = 0;
-            BitmapData data = bmp.LockBits(r, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-            unsafe
-            {
-                byte* ptr = (byte*)(data.Scan0);
-                for (int y = 0; y < r.Height; y++)
-                {
-                    for (int x = 0; x < r.Width; x++)
-                    {
-                        colorcnt[ptr[0]]++;
-                        alltotal++;
-                        ptr += 3;
-                    }
-                    ptr += data.Stride - data.Width * 3;
-                }
-            }
-            bmp.UnlockBits(data);
-            for (int i = 0; i < 256; i++)
-            {
-                sum += colorcnt[i];
-                int y = (int)(sum * 1.0 / (alltotal * 1.0 / 100.0));
-                if (y >= pergamma)
-                    return i;
-            }
-            return 0;
-        }
-        private static void GammaImg(Bitmap gdt, Bitmap src, int gamma, Rectangle r)
-        {
-            BitmapData datagdt = gdt.LockBits(r, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-            BitmapData databmp = src.LockBits(r, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-            unsafe
-            {
-                byte* ptr = (byte*)(databmp.Scan0);
-                byte* ptrgdt = (byte*)(datagdt.Scan0);
-                for (int y = 0; y < r.Height; y++)
-                {
-                    for (int x = 0; x < r.Width; x++)
-                    {
-                        ptrgdt[0] = ptrgdt[1] = ptrgdt[2] = (byte)(ptr[0] > gamma ? 255 : 0);
-                        ptr += 3;
-                        ptrgdt += 3;
-                    }
-                    ptr += databmp.Stride - databmp.Width * 3;
-                    ptrgdt += datagdt.Stride - datagdt.Width * 3;
-                }
-            }
-            src.UnlockBits(databmp);
-            gdt.UnlockBits(datagdt);
-        }
-
     }
 }

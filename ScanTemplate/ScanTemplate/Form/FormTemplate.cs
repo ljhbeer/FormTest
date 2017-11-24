@@ -49,9 +49,11 @@ namespace ARTemplate
             m_tn.Nodes.Clear();
             //MT.ClearEvent();
             m_Imgselection = new Rectangle(0, 0, 0, 0);
+            _OriginWith = pictureBox1.Width;
             zoombox.Reset();
             m_act = Act.None;
             treeView1.Nodes.Clear();
+
 
             m_tn.Text = "网上阅卷";
             TreeNode[] vt = new TreeNode[6];
@@ -66,9 +68,9 @@ namespace ARTemplate
             m_tn.Nodes.AddRange(vt);
             treeView1.Nodes.Add(m_tn);
             treeView1.ExpandAll();
-        }
-       
-        private void 导出模板OToolStripMenuItem_Click(object sender, EventArgs e)
+        }       
+
+        private void toolStripButtonSaveTemplate_Click(object sender, EventArgs e)
         {
             SaveFileDialog saveFileDialog2 = new SaveFileDialog();
             saveFileDialog2.FileName = "saveFileDialog2";
@@ -86,22 +88,27 @@ namespace ARTemplate
                     MessageBox.Show("Failed loading selected image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-        }       
-        private void 定义考号KToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            toolStripButtonDId.PerformClick();
         }
-        private void 定义特征点TToolStripMenuItem_Click(object sender, EventArgs e)
+        private void toolStripButtonImportTemplate_Click(object sender, EventArgs e)
         {
-            toolStripButtonDP.PerformClick();
-        }
-        private void 定义选择题XToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            toolStripButtonDX.PerformClick();
-        }
-        private void 定义非选择题FToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            toolStripButtonDF.PerformClick();
+
+            OpenFileDialog OpenFileDialog2 = new OpenFileDialog();
+            OpenFileDialog2.FileName = "OpenFileDialog2";
+            OpenFileDialog2.Filter = "Xml files (*.xml)|*.xml";
+            OpenFileDialog2.Title = "Save xml file";
+            if (OpenFileDialog2.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    if (template.Load(OpenFileDialog2.FileName))
+                        RefreshTemplate();
+                }
+                catch
+                {
+                    MessageBox.Show("Failed loading selected image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            MessageBox.Show("暂未实现");
         }
         private void toolStripMenuItemExportImg_Click(object sender, EventArgs e)
         {
@@ -239,9 +246,14 @@ namespace ARTemplate
             // zoombox.Reset();
             if (!((ToolStripButton)sender).Checked)
                 ((ToolStripButton)sender).Checked = false;
-            double rat =  zoombox.ImageWith(pictureBox1) /  pictureBox1.Image.Width * 1.0; 
+            m_act = Act.None;
+            double rat =   _OriginWith / zoombox.ImageWith(pictureBox1) ; 
             Zoomrat(rat, new Point(pictureBox1.Width / 2, pictureBox1.Height / 2));
-        }       
+        }
+        private void toolStripButtonCloseAndOutImages_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
         private void CompleteSelection(bool bcomplete)
         {
             if (bcomplete)
@@ -423,6 +435,7 @@ namespace ARTemplate
                 pictureBox1.Width = width;
             // pictureBox1.Image = bitmap_show;
             zoombox.UpdateBoxScale(pictureBox1);
+            _OriginWith = zoombox.ImageWith(pictureBox1);
             pictureBox1.Invalidate();
         }
 
@@ -502,7 +515,38 @@ namespace ARTemplate
                 float count = 0;
                 if (InputBox.Input("设置选择题", "标题", ref choosename, "小题数", ref count))
                 {//仅支持 横向
-                    Bitmap bitmap = ((Bitmap)(pictureBox1.Image)).Clone(m_Imgselection, pictureBox1.Image.PixelFormat);
+                    Bitmap bitmap = ((Bitmap)(pictureBox1.Image)).Clone(m_Imgselection, PixelFormat.Format24bppRgb);
+                    using (Graphics g = Graphics.FromImage(bitmap))
+                    {   
+                        foreach (TreeNode tt in m_tn.Nodes["选区变黑"].Nodes)
+                        {
+                            if (tt.Tag != null)
+                            {
+                                Rectangle r = (Rectangle)tt.Tag;
+                                r.Intersect(m_Imgselection);
+                                if (r.Width > 0)
+                                {
+                                    r.Offset(-m_Imgselection.X, -m_Imgselection.Y);
+                                    g.FillRectangle( Brushes.Black ,r);
+                                }
+                            }
+                        }
+                        foreach (TreeNode tt in m_tn.Nodes["选区变白"].Nodes)
+                        {
+                            if (tt.Tag != null)
+                            {
+                                Rectangle r = (Rectangle)tt.Tag;
+                                r.Intersect(m_Imgselection);
+                                if (r.Width > 0)
+                                {
+                                    r.Offset(-m_Imgselection.X, -m_Imgselection.Y);
+                                    g.FillRectangle(Brushes.White, r);
+                                }
+                            }
+                        }
+                        bitmap.Save("f:\\" + choosename + "_test.jpg");
+                    }
+
                     DetectChoiceArea dca = new DetectChoiceArea(bitmap, (int)count);
                     if (dca.Detect())
                     {
@@ -710,5 +754,6 @@ namespace ARTemplate
         private Point crop_startpoint;
         private ZoomBox zoombox;
         private Template template;
+        private double _OriginWith;
     }
 }
