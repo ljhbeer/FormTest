@@ -33,6 +33,8 @@
             this.label1 = new System.Windows.Forms.Label();
             this.textBoxWorkPath = new System.Windows.Forms.TextBox();
             this.buttonworkpath = new System.Windows.Forms.Button();
+            this.listBox2 = new System.Windows.Forms.ListBox();
+            this.checkBoxDetectImg = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // listBox1
@@ -43,6 +45,7 @@
             this.listBox1.Name = "listBox1";
             this.listBox1.Size = new System.Drawing.Size(212, 304);
             this.listBox1.TabIndex = 0;
+            this.listBox1.SelectedIndexChanged += new System.EventHandler(this.listBox1_SelectedIndexChanged);
             // 
             // buttonGo
             // 
@@ -81,15 +84,37 @@
             this.buttonworkpath.UseVisualStyleBackColor = true;
             this.buttonworkpath.Click += new System.EventHandler(this.buttonworkpath_Click);
             // 
+            // listBox2
+            // 
+            this.listBox2.FormattingEnabled = true;
+            this.listBox2.ItemHeight = 12;
+            this.listBox2.Location = new System.Drawing.Point(316, 37);
+            this.listBox2.Name = "listBox2";
+            this.listBox2.Size = new System.Drawing.Size(311, 304);
+            this.listBox2.TabIndex = 0;
+            this.listBox2.SelectedIndexChanged += new System.EventHandler(this.listBox2_SelectedIndexChanged);
+            // 
+            // checkBoxDetectImg
+            // 
+            this.checkBoxDetectImg.AutoSize = true;
+            this.checkBoxDetectImg.Location = new System.Drawing.Point(365, 360);
+            this.checkBoxDetectImg.Name = "checkBoxDetectImg";
+            this.checkBoxDetectImg.Size = new System.Drawing.Size(78, 16);
+            this.checkBoxDetectImg.TabIndex = 5;
+            this.checkBoxDetectImg.Text = "detectimg";
+            this.checkBoxDetectImg.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(714, 393);
+            this.Controls.Add(this.checkBoxDetectImg);
             this.Controls.Add(this.buttonworkpath);
             this.Controls.Add(this.textBoxWorkPath);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.buttonGo);
+            this.Controls.Add(this.listBox2);
             this.Controls.Add(this.listBox1);
             this.Name = "Form1";
             this.Text = "Form1";
@@ -106,6 +131,8 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox textBoxWorkPath;
         private System.Windows.Forms.Button buttonworkpath;
+        private System.Windows.Forms.ListBox listBox2;
+        private System.Windows.Forms.CheckBox checkBoxDetectImg;
     }
 }
 

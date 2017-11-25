@@ -45,7 +45,7 @@ namespace ScanTemplate
         }
         public Rectangle Detected(Bitmap bmp)
         {
-            Rectangle r = DetectFeatureRect(_listsubjects[0]);
+            Rectangle r = DetectFeatureRect(_listsubjects[0],bmp);
             if (r.Width == 0)
                 return new Rectangle();
             r.Width = CorrectRect.Width;
@@ -57,10 +57,12 @@ namespace ScanTemplate
         {
             return CorrectRect.Width > 0;
         }
-        private Rectangle DetectFeatureRect(subject sub)
+        private Rectangle DetectFeatureRect(subject sub,Bitmap src=null)
         {
             Size minsize = new Size(30, 30);
-            Bitmap bmp =_src.Clone(sub.Rect, _src.PixelFormat);
+            if (src == null)
+                src = _src;
+            Bitmap bmp =src.Clone(sub.Rect, src.PixelFormat);
 
             bmp.Save(sub.ToString() + ".tif");
             Rectangle rect = DetectFeatureRectAngle(bmp);
