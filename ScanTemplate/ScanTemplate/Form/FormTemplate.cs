@@ -252,6 +252,7 @@ namespace ARTemplate
         }
         private void toolStripButtonCloseAndOutImages_Click(object sender, EventArgs e)
         {
+        	UpdateTemplate();
             this.Close();
         }
         private void CompleteSelection(bool bcomplete)

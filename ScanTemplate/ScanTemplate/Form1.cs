@@ -95,6 +95,7 @@ namespace ScanTemplate
             sb.Append(s + "," + Recttostring(CorrectRect) + ",");
             if (CorrectRect.Width > 0)
             {
+            	//TODO: debug r1 in 001
                 Rectangle cr1 = new Rectangle(CorrectRect.Right-40,CorrectRect.Top-40,80,80);           
                 Rectangle r1 = dr.Detected(cr1, bmp);
                 Rectangle cr2 = new Rectangle(CorrectRect.Left - 40, CorrectRect.Bottom - 40, 80, 80);
@@ -106,7 +107,7 @@ namespace ScanTemplate
                 nbmp.Save(s.Replace("LJH\\", "LJH\\Correct\\"));
 
                 //计算选择题
-                AutoComputeXZT acx = new AutoComputeXZT(_artemplate, _angle, bmp);
+                AutoComputeXZT acx = new AutoComputeXZT(_artemplate, _angle, nbmp);
 
                 sb.Append(acx.ComputeXZT());
 

@@ -101,6 +101,7 @@ namespace ARTemplate
             i = 0;           
             return xmlDoc;
         }
+        #region savetosupperxmldoc
         //public XmlDocument SaveToSupperXmlDoc()
         //{
         //    XmlDocument xmlDoc = new XmlDocument();
@@ -150,6 +151,7 @@ namespace ARTemplate
         //    }
         //    return xmlDoc;
         //}
+        #endregion
         public bool Load(String xmlFileName)
         {
             ResetData();
@@ -307,6 +309,8 @@ namespace ARTemplate
         }
         
         public String NodeName{ get { return "TEMPLATE"; } }
+        public Bitmap Image { get { return _src; } }
+        public List<SingleChoiceArea> SingleChoiceAreas {get { return m_singlechoicearea;}}
         public Size Imgsize
         {
             get { return _src.Size; }
@@ -315,7 +319,9 @@ namespace ARTemplate
         {
             get { return _imagefilename; }
         }
-
+        public Rectangle Correctrect{
+        	get{ return _correctrect;}
+        }
         private List<SingleChoice> m_singlechoice;
         private List<SingleChoiceArea> m_singlechoicearea;
         private List<KaoHaoChoiceArea> m_kaohaochoicearea;
@@ -325,6 +331,5 @@ namespace ARTemplate
 
 
 
-        public Bitmap Image { get { return _src; } }
     }
 }
