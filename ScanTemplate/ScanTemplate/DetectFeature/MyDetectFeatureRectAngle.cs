@@ -12,6 +12,16 @@ namespace ScanTemplate
     class MyDetectFeatureRectAngle
     {
         public Rectangle CorrectRect { get; set; }
+        public List<Point> ListPoint
+        {
+            get
+            {
+                return new List<Point>(){
+                    _listFeatureRectangles[0].Location,
+                    _listFeatureRectangles[1].Location,
+                    _listFeatureRectangles[2].Location};
+            }
+        }
         public MyDetectFeatureRectAngle(System.Drawing.Bitmap bmp)
         {
             this._src = bmp;
@@ -52,27 +62,38 @@ namespace ScanTemplate
             r.Height = CorrectRect.Height;
             return r;
         }
-
+        public Rectangle Detected(Rectangle subrect, Bitmap src)
+        {
+            if (src == null)
+                return new Rectangle();
+            subrect.Intersect(new Rectangle(0, 0, src.Width, src.Height));
+            return DetectFeatureRect(subrect, src);
+        }
         public bool Detected()
         {
             return CorrectRect.Width > 0;
         }
-        private Rectangle DetectFeatureRect(subject sub,Bitmap src=null)
+
+        private Rectangle DetectFeatureRect(subject sub, Bitmap src = null)
+        {
+            return DetectFeatureRect(sub.Rect, src);
+        }
+        private Rectangle DetectFeatureRect(Rectangle subrect,Bitmap src=null)
         {
             Size minsize = new Size(30, 30);
             if (src == null)
                 src = _src;
-            Bitmap bmp =src.Clone(sub.Rect, src.PixelFormat);
+            Bitmap bmp =src.Clone(subrect, src.PixelFormat);
 
-            bmp.Save(sub.ToString() + ".tif");
+            //bmp.Save(sub.ToString() + ".tif");
             Rectangle rect = DetectFeatureRectAngle(bmp);
             if (rect.Width == 1 || rect.Height == 1)
                 return new Rectangle();
             Rectangle rect2 = DetectFeatureRectAngle2(bmp, rect);
             if (rect2.Width == 1 || rect2.Height == 1)
                 return new Rectangle();
-            if(rect2.Width == rect.Width && rect2.Height == rect.Height){
-                rect.Offset(sub.Rect.Location);
+            if(Math.Abs(rect2.Width - rect.Width)<3 && Math.Abs(rect2.Height - rect.Height)<3){
+                rect.Offset(subrect.Location);
                 return rect;
             }
 
@@ -96,7 +117,10 @@ namespace ScanTemplate
                     maxlen = minsize.Height * 9 / 10;
                     bool su = DetectFeatureRectAngle4(bmp, r, maxlen, ref outrect);
                     if (su)
+                    {
+                        outrect.Offset(subrect.Location);
                         return outrect;
+                    }
                 }
             }
             return new Rectangle();

@@ -19,6 +19,8 @@ namespace ScanTemplate
         {
             InitializeComponent();
             _workpath = textBoxWorkPath.Text;
+            _angle = null;
+            _artemplate = null;
         }
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -57,12 +59,14 @@ namespace ScanTemplate
 
             if (dr.Detected())
             {
-                ARTemplate.Template art = new ARTemplate.Template(filename, bmp, dr.CorrectRect);
+                _artemplate = new ARTemplate.Template(filename, bmp, dr.CorrectRect);
 
                 this.Hide();
-                ARTemplate.FormTemplate f = new ARTemplate.FormTemplate(art);
+                ARTemplate.FormTemplate f = new ARTemplate.FormTemplate(_artemplate);
                 f.ShowDialog();
                 this.Show();
+
+                _angle = new AutoAngle(dr.ListPoint);
                 if(namelist!=null)
                 DetectAllImgs(dr, namelist);
             }
@@ -73,33 +77,47 @@ namespace ScanTemplate
             string dir = fi.Directory.FullName.Replace("LJH\\", "LJH\\Correct\\");
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
+
+            StringBuilder sb = new StringBuilder();
             foreach (string s in nameList)
             {
-                DetectAllImg(dr, s);
+                sb.Append(DetectAllImg(dr, s));
             }
-            //File.WriteAllText("allimport.txt", sb.ToString());
+            File.WriteAllText("allimport.txt", sb.ToString());
         }
 
-        private void DetectAllImg(MyDetectFeatureRectAngle dr, string s)
+        private StringBuilder DetectAllImg(MyDetectFeatureRectAngle dr, string s)
         {
-            Bitmap bmp1 = (Bitmap)Bitmap.FromFile(s);
+            Bitmap bmp = (Bitmap)Bitmap.FromFile(s);
             //MyDetectFeatureRectAngle dr = new MyDetectFeatureRectAngle(bmp);
-            Rectangle CorrectRect = dr.Detected(bmp1);
+            Rectangle CorrectRect = dr.Detected(bmp);
             StringBuilder sb = new StringBuilder();
             sb.Append(s + "," + Recttostring(CorrectRect) + ",");
             if (CorrectRect.Width > 0)
             {
-                bmp1 = (Bitmap)bmp1.Clone(CorrectRect, bmp1.PixelFormat);
-                bmp1.Save(s.Replace("LJH\\", "LJH\\Correct\\"));
-                bmp1.Dispose();
-                bmp1 = null;
-                //统计选择题
+                Rectangle cr1 = new Rectangle(CorrectRect.Right-40,CorrectRect.Top-40,80,80);           
+                Rectangle r1 = dr.Detected(cr1, bmp);
+                Rectangle cr2 = new Rectangle(CorrectRect.Left - 40, CorrectRect.Bottom - 40, 80, 80);
+                Rectangle r2 = dr.Detected(cr2, bmp);
+
+                _angle.SetPaper(CorrectRect.Location, r1.Location, r2.Location);
+
+                Bitmap nbmp = (Bitmap)bmp.Clone(CorrectRect, bmp.PixelFormat);
+                nbmp.Save(s.Replace("LJH\\", "LJH\\Correct\\"));
+
+                //计算选择题
+                AutoComputeXZT acx = new AutoComputeXZT(_artemplate, _angle, bmp);
+
+                sb.Append(acx.ComputeXZT());
+
+
             }
             else
             {
                 //检测失败
             }
             sb.AppendLine();
+            return sb;
             //MessageBox.Show(sb.ToString());
         }
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -180,5 +198,7 @@ namespace ScanTemplate
             return namelist;
         }
         private string _workpath;
+        private AutoAngle _angle;
+        private ARTemplate.Template _artemplate;
     }
 }

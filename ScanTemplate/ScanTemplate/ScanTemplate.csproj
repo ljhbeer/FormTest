@@ -47,6 +47,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoAngle.cs" />
+    <Compile Include="AutoComputeXZT.cs" />
     <Compile Include="DetectFeature\subject.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
