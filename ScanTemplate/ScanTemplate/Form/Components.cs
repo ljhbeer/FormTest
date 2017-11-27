@@ -153,165 +153,87 @@ namespace ARTemplate
         private Button buttonCancel;
         private int numflag;
     }
-    interface ISelectionInterface
+    public class Area
     {
-        Rectangle ImgSelection();
-        bool HasSubSelection();
-        Rectangle[] ImgSubSelection();
-    }
-    public class TriAngleFeature : ISelectionInterface
-    {
-        public TriAngleFeature(List<Point> list)
-        {
-            if (list.Count != 3)
-                throw new System.Exception("点的数目不对");
-            this.corners = list;
-            Init();
-        }
-        public TriAngleFeature(List<Point> list, Point offset)
-        {
-            if (list.Count != 3)
-                throw new System.Exception("点的数目不对");
-            this.corners = list;
-            for (int i = 0; i < corners.Count; i++)
-            {
-                corners[i] = new Point(corners[i].X + offset.X, corners[i].Y + offset.Y);
-            }
-            Init();
-            //this.ImgSelection = imgrect;
-            //this.BoxSelection = boxrect;
-
-        }
-        public Point CornerPoint()
-        {
-            return new Point(corners[rightpos].X, corners[rightpos].Y);
-        }
-        public int Direction { get; set; }
+        public Rectangle ImgArea { get { return Rect; } }
         public bool IntersectsWith(Rectangle rect)
         {
-            return imgselection.IntersectsWith(rect);
+            return Rect.IntersectsWith(rect);
         }
-        private Rectangle imgselection;
-        public Rectangle  ImgSelection(){ return imgselection; }
-        public bool HasSubSelection() { return true; }
-        public Rectangle[] ImgSubSelection()
+
+        public virtual Rectangle[] ImgSubArea() {  return null;   }
+        public virtual bool HasSubArea() {  return false;  }
+        public virtual bool NeedFill() { return false; }
+        public virtual Brush FillPen() { return Brushes.Black; }
+        public Rectangle Rect;
+    }
+    public class FeaturePoint : Area
+    {
+        public FeaturePoint(Rectangle r,Point midpoint) // 0,左上  1，右上  2左下 3又下
         {
-            return new Rectangle[]{new Rectangle(imgselection.X - 2 * imgselection.Width,
-                imgselection.Y - 2 * imgselection.Height,
-                imgselection.Width * 5, imgselection.Height * 5)};
+            this.Rect = r;
+            if (r.X < midpoint.X)
+            {
+                if (r.Y < midpoint.Y)
+                    Direction = 0;
+                else
+                    Direction = 1;
+            }
+            else
+            {
+                if (r.Y < midpoint.Y)
+                    Direction = 2;
+                else
+                    Direction = 3;
+            }
         }
-        internal Rectangle BigImgSelection()
+        public override bool HasSubArea(){ return true;  }
+        public override Rectangle[] ImgSubArea()
         {
-           return  new Rectangle(imgselection.X - 2 * imgselection.Width,
-                imgselection.Y - 2 * imgselection.Height,
-                imgselection.Width * 5, imgselection.Height * 5);
+                return new Rectangle[] { Rect, BigImgSelection() };
         }
         public String ToXmlString()
         {
             String str = "";
-            foreach (Point p in corners)
-            {
-                str+="<POINT>"+p.X+","+p.Y+"</POINT>";
-            }
+            str += "<Rectangle>" + Rect.X + "," + Rect.Y+ "," +  + Rect.Width + "," + Rect.Height + "</Rectangle>";
             return str;
         }
-        public int Distance(Point a, Point b)
+        private Rectangle BigImgSelection()
         {
-            return (int)(Math.Sqrt( (a.X-b.X)*(a.X-b.X) + (a.Y-b.Y)*(a.Y-b.Y)));
-        }
-        private void Init()
-        {
-            line = new double[3];
-            cos = new double[3];
-            rightpos = -1;
-            for (int i = 0; i < 3; i++)
-            {
-                int b = (i + 1) % 3;
-                int c = (i + 2) % 3;
-                line[i] = new double();
-                cos[i] = new double();
-                line[i] =Distance(corners[b],corners[c]);
-            }
-            for (int i = 0; i < 3; i++)
-            {
-                int b = (i + 1) % 3;
-                int c = (i + 2) % 3;
-                cos[i] = (Math.Pow(line[b], 2) + Math.Pow(line[c], 2) - Math.Pow(line[i], 2)) / (2 * line[b] * line[c]);
-                if (Math.Abs(cos[i]) < 0.10)
-                    rightpos = i;
-            }
-            if (rightpos == -1)
-                throw new System.Exception("不是正三角形");
-            {
-                Direction = 0;
-                int a = rightpos;
-                int b = (rightpos + 1) % 3;
-                int c = (rightpos + 2) % 3;
-                double x2 = (corners[b].X + corners[c].X) / 2;
-                double y2 = (corners[b].Y + corners[c].Y) / 2;
-                if (corners[a].X > x2 + 3)
-                    Direction += 1;
-                if (corners[a].Y > y2 + 3)
-                    Direction += 2;
-                //
-                int width = (int)(Math.Abs(corners[a].X - x2) * 2) - 1;
-                int height = (int)(Math.Abs(corners[a].Y - y2) * 2) - 1;
-                int X = corners[a].X < x2 ? corners[a].X : corners[a].X - width;
-                int Y = corners[a].Y < y2 ? corners[a].Y : corners[a].Y - height;
-                this.imgselection = new Rectangle(X, Y, width, height);
-
-            }
-        }
-        private List<Point> corners;
-        private double[] cos;
-        private double[] line;
-        private int rightpos;
-    }
-    public class SingleChoice :  ISelectionInterface
-    {
-        private Rectangle rect;
-        private Rectangle rectangle;
-        private string text;
-        public SingleChoice(Rectangle rect)
-        {
-            this.rect = rect;
+           return  new Rectangle(Rect.X - Rect.Width,
+                Rect.Y - Rect.Height,
+                Rect.Width * 3, Rect.Height * 3);
         }       
-        public SingleChoice(Rectangle rectangle, string text)
+        public int Direction { get; set; }
+    }
+    public class SingleChoice :  Area
+    {
+        private string text;
+        public SingleChoice(Rectangle rect, string text="")
         {
-            this.rectangle = rectangle;
+            this.Rect = rect;
             this.text = text;
-        }
+        }       
         public override string ToString()
         {
             return text;
         }
-        public Rectangle ImgSelection() { return new Rectangle(); }
-        public bool HasSubSelection() { return false; }
-        public Rectangle[] ImgSubSelection() { return new Rectangle[0]; }
-        internal string ToXmlString()
+        private string ToXmlString()
         {
             return "";
         }
     }
-    public class KaoHaoChoiceArea : ISelectionInterface
+    public class KaoHaoChoiceArea : Area
     {
         public KaoHaoChoiceArea(Rectangle m_Imgselection, string name, List<List<Point>> list, Size size)
         {
-            this.imgselection = m_Imgselection;
-            this.name = name;
+            this.Rect = m_Imgselection;
+            this.Name = name;
             this.list = list;
             this.size = size;
         }
-        internal bool IntersectsWith(Rectangle rect)
-        {
-            return this.imgselection.IntersectsWith(rect);
-        }
-        public Rectangle ImgSelection()
-        {
-            return imgselection;
-        }
-        public bool HasSubSelection() { return true; }
-        public Rectangle[] ImgSubSelection() { 
+        public override Rectangle[] ImgSubArea() { 
+           
             int count = 0;
             foreach(List<Point> l in list)
                 count += l.Count;
@@ -327,14 +249,15 @@ namespace ARTemplate
                 }
             } 
             return rv; 
+            
         }
-        internal string ToXmlString()
+        public string ToXmlString()
         {
             String str = "";
             String strp = "";
             int i = 0;
-            str += "<RECTANGLE>" + imgselection.X + "," + imgselection.Y + "," + imgselection.Width + "," + imgselection.Height + "</RECTANGLE>"
-                    + "<NAME>" + name + "</NAME>" + "<SIZE>"+size.Width+","+size.Height+"</SIZE>";
+            str += "<RECTANGLE>" + Rect.X + "," + Rect.Y + "," + Rect.Width + "," + Rect.Height + "</RECTANGLE>"
+                    + "<NAME>" + Name + "</NAME>" + "<SIZE>"+size.Width+","+size.Height+"</SIZE>";
             foreach (List<Point> lp in list)
             {
                 strp = "";
@@ -345,47 +268,27 @@ namespace ARTemplate
             }
             return str;
         }
-        internal int Count()
-        {
-            return list.Count;
-        }
-
-        public Rectangle imgselection { get; set; }
-        private SingleChoice[] scv;
-        private string name;
+        //private SingleChoice[] scv;
+        public string Name { get; set; }
         public List<List<Point>> list;
         public Size size;
-
-        public string Name { get { return name; } }
     }
-    public class SingleChoiceArea : ISelectionInterface
+    public class SingleChoiceArea : Area
     {
-        //public SingleChoiceArea(Rectangle imgrect, string name)
-        //{
-        //    this.imgselection = imgrect;
-        //    this.name = name;
-        //}
-        //public SingleChoiceArea(SingleChoice[] sc)
-        //{
-        //    this.scv = sc;
-        //}
-        public SingleChoiceArea(Rectangle m_Imgselection, string name, List<List<Point>> list, Size size)
+        public SingleChoiceArea(Rectangle  rect, string name)
         {
-            this.imgselection = m_Imgselection;
-            this.name = name;
+            this.Rect = rect;
+            this._name = name;
+        }
+        public SingleChoiceArea(Rectangle rect, string name, List<List<Point>> list, Size size)
+        {
+            this.Rect = rect;
+            this._name = name;
             this.list = list;
-            this.size = size;
+            this.Size = size;
         }
-        internal bool IntersectsWith(Rectangle rect)
-        {
-            return this.imgselection.IntersectsWith(rect);
-        }
-        public Rectangle ImgSelection()
-        {
-            return imgselection;
-        }
-        public bool HasSubSelection() { return true; }
-        public Rectangle[] ImgSubSelection() { 
+        public override  bool HasSubArea() { return true; }
+        public override  Rectangle[] ImgSubArea() { 
             int count = 0;
             foreach(List<Point> l in list)
                 count += l.Count;
@@ -396,19 +299,20 @@ namespace ARTemplate
             {
                 foreach (Point p in l)
                 {
-                    rv[i] = new Rectangle(p, size);
+                    rv[i] = new Rectangle(p, Size);
                     i++;
                 }
             } 
             return rv; 
         }
-        internal string ToXmlString()
+
+        public string ToXmlString()
         {
             String str = "";
             String strp = "";
             int i = 0;
-            str += "<RECTANGLE>" + imgselection.X + "," + imgselection.Y + "," + imgselection.Width + "," + imgselection.Height + "</RECTANGLE>"
-                    + "<NAME>" + name + "</NAME>" + "<SIZE>"+size.Width+","+size.Height+"</SIZE>";
+            str += "<RECTANGLE>" + Rect.X + "," + Rect.Y + "," + Rect.Width + "," + Rect.Height + "</RECTANGLE>"
+                    + "<NAME>" + _name + "</NAME>" + "<SIZE>"+Size.Width+","+Size.Height+"</SIZE>";
             foreach (List<Point> lp in list)
             {
                 strp = "";
@@ -419,57 +323,56 @@ namespace ARTemplate
             }
             return str;
         }
-        internal int Count()
+        public int Count 
         {
-            return list.Count;
+            get
+            {
+                return list.Count;
+            }
         }
-
-        public Rectangle imgselection { get; set; }
-        private SingleChoice[] scv;
-        private string name;
+        public string Name { get { return _name; } }
         public List<List<Point>> list;
-        public Size size;
-
-        public string Name { get { return name; } }
+        public Size Size;
+        private string _name;
     }
-    public class UnChoose : ISelectionInterface
+    public class UnChoose : Area
     {
         public UnChoose(float score, string name, Rectangle imgrect)
         {
             this.score = score;
-            this.name = name;
-            this.imgselection = imgrect;
+            this._name = name;
+            this.Rect = imgrect;
         }
-        public bool IntersectsWith(Rectangle rect)
+        public int Scores { get { return (int)score; } }       
+        public string ToXmlString()
         {
-            return imgselection.IntersectsWith(rect);
+            String str =  "<RECTANGLE>" + Rect.X + "," + Rect.Y + "," + Rect.Width + "," + Rect.Height + "</RECTANGLE>"
+                    + "<NAME>"+_name+"</NAME>" + "<SCORE>"+score+"</SCORE>";
+            return str;
         }
         public override String ToString()
         {
-            return name;
+            return _name;
         }
-        public int Scores { get { return (int)score; } }
-        public Rectangle ImgSelection() 
-        {
-            return imgselection;
-        }
-        public bool HasSubSelection() { return false; }
-        public Rectangle[] ImgSubSelection() { return null; }
-        internal string ToXmlString()
-        {
-            String str = "";
-            //foreach (Point p in imgselection)
-            {
-                str += "<RECTANGLE>" + imgselection.X + "," + imgselection.Y + "," + imgselection.Width + "," + imgselection.Height + "</RECTANGLE>"
-                    + "<NAME>"+name+"</NAME>" + "<SCORE>"+score+"</SCORE>";
-            }
-            return str;
-        }
+        public string Name { get { return _name; } }
         private float score;
-        private string name;
-        private Rectangle imgselection;
-
-        public string Name { get { return name; } }
+        private string _name;
+    }
+    public class TempArea : Area
+    {
+        public TempArea(Rectangle rect, string name)
+        {
+            this.Rect = rect;
+            this._Name = name;
+            if(_Name.Contains("黑"))
+                _P = Brushes.Black;
+            else
+                _P = Brushes.White;
+        }
+        public override  bool NeedFill() { return true; }
+        public override  Brush FillPen() { return _P; }
+        private string _Name;
+        private Brush _P;
     }
     public class ZoomBox
     {
@@ -536,13 +439,13 @@ namespace ARTemplate
     }
     public class Paper
     {
-        public Paper(List<TriAngleFeature> list)
+        public Paper(List<FeaturePoint> list)
         {
             if (list.Count != 3)
                 return;
-            cp = list[0].CornerPoint();
-            rp = list[1].CornerPoint();
-            bp = list[2].CornerPoint();
+            cp = list[0].ImgArea.Location;
+            rp = list[1].ImgArea.Location;
+            bp = list[2].ImgArea.Location;
         }
         public Paper(List<Point> list)
         {
@@ -571,6 +474,4 @@ namespace ARTemplate
         Point rp;
         Point bp;
     }
-
-
 }

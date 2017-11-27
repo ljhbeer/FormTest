@@ -59,6 +59,7 @@ namespace ScanTemplate
 
             if (dr.Detected())
             {
+                if(_artemplate==null)
                 _artemplate = new ARTemplate.Template(filename, bmp, dr.CorrectRect);
 
                 this.Hide();
@@ -89,6 +90,7 @@ namespace ScanTemplate
         private StringBuilder DetectAllImg(MyDetectFeatureRectAngle dr, string s)
         {
             Bitmap bmp = (Bitmap)Bitmap.FromFile(s);
+            string str = s.Substring(s.Length - 7, 3);
             //MyDetectFeatureRectAngle dr = new MyDetectFeatureRectAngle(bmp);
             Rectangle CorrectRect = dr.Detected(bmp);
             StringBuilder sb = new StringBuilder();
@@ -96,9 +98,9 @@ namespace ScanTemplate
             if (CorrectRect.Width > 0)
             {
             	//TODO: debug r1 in 001
-                Rectangle cr1 = new Rectangle(CorrectRect.Right-40,CorrectRect.Top-40,80,80);           
+                Rectangle cr1 = new Rectangle(CorrectRect.Right-60,CorrectRect.Top-20,80,80);           
                 Rectangle r1 = dr.Detected(cr1, bmp);
-                Rectangle cr2 = new Rectangle(CorrectRect.Left - 40, CorrectRect.Bottom - 40, 80, 80);
+                Rectangle cr2 = new Rectangle(CorrectRect.Left - 20, CorrectRect.Bottom - 60, 80, 80);
                 Rectangle r2 = dr.Detected(cr2, bmp);
 
                 _angle.SetPaper(CorrectRect.Location, r1.Location, r2.Location);
@@ -109,7 +111,7 @@ namespace ScanTemplate
                 //计算选择题
                 AutoComputeXZT acx = new AutoComputeXZT(_artemplate, _angle, nbmp);
 
-                sb.Append(acx.ComputeXZT());
+                sb.Append(acx.ComputeXZT(str));
 
 
             }

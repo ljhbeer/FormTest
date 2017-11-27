@@ -56,15 +56,16 @@ namespace ARTemplate
 
 
             m_tn.Text = "网上阅卷";
-            TreeNode[] vt = new TreeNode[6];
+            TreeNode[] vt = new TreeNode[7];
             for (int i = 0; i < vt.Count(); i++)
                 vt[i] = new TreeNode();
             vt[0].Name = vt[0].Text = "特征点";
-            vt[1].Name = vt[1].Text = "考号";
-            vt[2].Name = vt[2].Text = "选择题";
-            vt[3].Name = vt[3].Text = "非选择题";
-            vt[4].Name = vt[4].Text = "选区变白";
-            vt[5].Name = vt[5].Text = "选区变黑";
+            vt[1].Name = vt[1].Text = "姓名";
+            vt[2].Name = vt[2].Text = "考号";
+            vt[3].Name = vt[3].Text = "选择题";
+            vt[4].Name = vt[4].Text = "非选择题";
+            vt[5].Name = vt[5].Text = "选区变白";
+            vt[6].Name = vt[6].Text = "选区变黑";
             m_tn.Nodes.AddRange(vt);
             treeView1.Nodes.Add(m_tn);
             treeView1.ExpandAll();
@@ -109,65 +110,7 @@ namespace ARTemplate
                 }
             }
             MessageBox.Show("暂未实现");
-        }
-        private void toolStripMenuItemExportImg_Click(object sender, EventArgs e)
-        {
-            if (pictureBox1.Image == null) return;
-            Brush dark = Brushes.Black;
-            Brush white = Brushes.White;
-            Image img = (Image)pictureBox1.Image.Clone();
-
-
-            if (Tools.BitmapTools.IsPixelFormatIndexed(img.PixelFormat))
-            {
-                Bitmap bmp = new Bitmap(img.Width, img.Height, PixelFormat.Format32bppArgb);
-                using (Graphics g = Graphics.FromImage(bmp))
-                {
-                    //g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                    //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                    //g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-                    g.DrawImage(img,0,0,img.Width,img.Height);
-                }
-                img = bmp;
-            }
-            {
-                Graphics g = Graphics.FromImage(img);
-                bool bchange = false;
-                foreach (TreeNode t in m_tn.Nodes["选区变黑"].Nodes)
-                {
-                    if (t.Tag != null)
-                    {
-                        bchange = true;
-                        Rectangle r = (Rectangle)t.Tag;
-                        g.FillRectangle(dark, r);
-                    }
-                }
-                foreach (TreeNode t in m_tn.Nodes["选区变白"].Nodes)
-                {
-                    if (t.Tag != null)
-                    {
-                        bchange = true;
-                        Rectangle r = (Rectangle)t.Tag;
-                        g.FillRectangle(white, r);
-                    }
-                }
-
-                ///////////
-                if (!bchange)
-                {
-                    MessageBox.Show("图片没有改动");
-                    return;
-                }
-                SaveFileDialog saveFileDialog2 = new SaveFileDialog();
-                saveFileDialog2.FileName = "导出修改后的图片";
-                saveFileDialog2.Filter = "JPEG files (*.jpg)|*.jpg";
-                saveFileDialog2.Title = "导出修改后的图片";
-                if (saveFileDialog2.ShowDialog() == DialogResult.OK)
-                {
-                    img.Save(saveFileDialog2.FileName);
-                }
-            }
-        }
+        }        
         private void toolStripButtonWhite_Click(object sender, EventArgs e)
         {
             if (!((ToolStripButton)sender).Checked)
@@ -319,80 +262,30 @@ namespace ARTemplate
                 Brush white = Brushes.White;
                 Brush Red = Brushes.Red;
                 Font font = DefaultFont;
-                foreach (TreeNode t in m_tn.Nodes["特征点"].Nodes)
+                foreach (string s in new string[] { "特征点", "考号", "选择题", "非选择题", "选区变黑", "选区变白" })
                 {
-                    if (t.Tag != null)
+                    foreach (TreeNode t in m_tn.Nodes[s].Nodes)
                     {
-                        ISelectionInterface I = (ISelectionInterface)(t.Tag);
-                        e.Graphics.DrawRectangle(pen, zoombox.ImgToBoxSelection(I.ImgSelection()));
-                        if (I.HasSubSelection())
+                        if (t.Tag != null)
                         {
-                            foreach (Rectangle r in I.ImgSubSelection())
+                            Area I = (Area)(t.Tag);
+                            e.Graphics.DrawRectangle(pen, zoombox.ImgToBoxSelection(I.ImgArea));
+                            if (I.HasSubArea())
                             {
-                                e.Graphics.DrawRectangle(pen, zoombox.ImgToBoxSelection(r));
+                                foreach (Rectangle r in I.ImgSubArea())
+                                {
+                                    r.Offset(I.ImgArea.Location);
+                                    e.Graphics.DrawRectangle(pen, zoombox.ImgToBoxSelection(r));
+                                }
+                            }
+                            if (I.NeedFill())
+                            {
+                                e.Graphics.FillRectangle(I.FillPen(), zoombox.ImgToBoxSelection(I.ImgArea));
+                                e.Graphics.DrawString(t.Name, font, Red, zoombox.ImgToBoxSelection(I.ImgArea).Location);
                             }
                         }
                     }
-                }
-                foreach (TreeNode t in m_tn.Nodes["考号"].Nodes)
-                {
-                    if (t.Tag != null)
-                    {
-                        ISelectionInterface I = (ISelectionInterface)(t.Tag);
-                        e.Graphics.DrawRectangle(pen, zoombox.ImgToBoxSelection(I.ImgSelection()));
-                        if (I.HasSubSelection())
-                        {
-                            foreach (Rectangle r in I.ImgSubSelection())
-                            {
-                                r.Offset(I.ImgSelection().Location);
-                                e.Graphics.DrawRectangle(pen, zoombox.ImgToBoxSelection(r));
-                            }
-                        }
-                    }
-                }
-                foreach (TreeNode t in m_tn.Nodes["选择题"].Nodes)
-                {
-                    if (t.Tag != null)
-                    {
-                        ISelectionInterface I = (ISelectionInterface)(t.Tag);
-                        e.Graphics.DrawRectangle(pen, zoombox.ImgToBoxSelection(I.ImgSelection()));
-                        if (I.HasSubSelection())
-                        {
-                            foreach (Rectangle r in I.ImgSubSelection())
-                            {
-                                r.Offset(I.ImgSelection().Location);
-                                e.Graphics.DrawRectangle(pen, zoombox.ImgToBoxSelection(r));
-                            }
-                        }
-                    }
-                }
-                foreach (TreeNode t in m_tn.Nodes["非选择题"].Nodes)
-                {
-                    if (t.Tag != null)
-                    {
-                        ISelectionInterface I = (ISelectionInterface)(t.Tag);
-                        e.Graphics.DrawRectangle(pen, zoombox.ImgToBoxSelection(I.ImgSelection()));
-                    }
-                }
-
-                foreach (TreeNode t in m_tn.Nodes["选区变黑"].Nodes)
-                {
-                    if (t.Tag != null)
-                    {
-                        Rectangle r = zoombox.ImgToBoxSelection((Rectangle)t.Tag);
-                        e.Graphics.FillRectangle(dark,r );
-                        e.Graphics.DrawString(t.Name, font, Red, r.Location);
-                    }
-                }
-                foreach (TreeNode t in m_tn.Nodes["选区变白"].Nodes)
-                {
-                    if (t.Tag != null)
-                    {
-                        Rectangle r = zoombox.ImgToBoxSelection((Rectangle)t.Tag);
-                        e.Graphics.FillRectangle(white,r);
-                        e.Graphics.DrawString(t.Name, font, Red, r.Location);
-                    }
-                }
+                }               
             }
         }
         private void buttonzoomout_Click(object sender, EventArgs e)
@@ -445,63 +338,34 @@ namespace ARTemplate
         /// </summary>
         private void CompleteDeFineId()
         {
+            //TODO: 考号
             String keyname = "考号";
-            //if (!ExistDeFineSelection(keyname))
+            if (!ExistDeFineSelection(keyname))
             {
                 TreeNode t = new TreeNode();
                 int cnt = m_tn.Nodes[keyname].GetNodeCount(false) + 1;
                 t.Name = t.Text = keyname + cnt;
-                string choosename = "";
-                float count = 0;
-                if (InputBox.Input("设置考号", "考号排列横1纵2", ref choosename, "考号位数", ref count))
-                {//仅支持 横向
-                    Bitmap bitmap = ((Bitmap)(pictureBox1.Image)).Clone(m_Imgselection, pictureBox1.Image.PixelFormat);
-                    DetectChoiceArea dca = new DetectChoiceArea(bitmap, (int)count);
-                    Boolean bvertical = false;
-                    if (choosename == "1")
-                        bvertical = false;
-                    else if (choosename == "2")
-                        bvertical = true;
-                    else
-                    {
-                        MessageBox.Show("错误参数");
-                        return;
-                    }
-
-                    if (dca.DetectKH(bvertical))
-                    {
-                        t.Name = t.Text = "考号";
-                        t.Tag = new KaoHaoChoiceArea(m_Imgselection,
-                            t.Name, dca.Choicepoint, dca.Choicesize);
-                        m_tn.Nodes[keyname].Nodes.Add(t);
-                        //pictureBox1.Invalidate();
-                    }
-                    else
-                    {
-                        bitmap.Save("f:\\" + choosename + ".jpg");
-                    }
-                }
             }
         }
         private void CompleteDeFinePoint()
-        {
+        {//TODO: "特征点"
             String keyname = "特征点";
             if (!ExistDeFineSelection(keyname))
             {
-                List<Point> corners = new List<Point>();
-                Bitmap bmp = (Bitmap)pictureBox1.Image;
-                Image cropimg = bmp.Clone(m_Imgselection, bmp.PixelFormat);
-                Bitmap img = ConvertFormat.Convert((Bitmap)cropimg, PixelFormat.Format8bppIndexed, true);
-                if (CheckImageRectangledTriangle(img, out corners))
-                {
-                    TreeNode t = new TreeNode();
-                    int cnt = m_tn.Nodes[keyname].GetNodeCount(false) + 1;
-                    t.Name = t.Text = keyname + cnt;
-                    TriAngleFeature tf = new TriAngleFeature(corners, m_Imgselection.Location);
-                    t.Tag = tf;
-                    m_Imgselection = tf.ImgSelection();
-                    m_tn.Nodes[keyname].Nodes.Add(t);
-                }
+                //List<Point> corners = new List<Point>();
+                //Bitmap bmp = (Bitmap)pictureBox1.Image;
+                //Image cropimg = bmp.Clone(m_Imgselection, bmp.PixelFormat);
+                //Bitmap img = ConvertFormat.Convert((Bitmap)cropimg, PixelFormat.Format8bppIndexed, true);
+                //if (CheckImageRectangledTriangle(img, out corners))
+                //{
+                //    TreeNode t = new TreeNode();
+                //    int cnt = m_tn.Nodes[keyname].GetNodeCount(false) + 1;
+                //    t.Name = t.Text = keyname + cnt;
+                //    TriAngleFeature tf = new TriAngleFeature(corners, m_Imgselection.Location);
+                //    t.Tag = tf;
+                //    m_Imgselection = tf.ImgSelection();
+                //    m_tn.Nodes[keyname].Nodes.Add(t);
+                //}
             }
         }
         private void CompleteDeFineChoose()
@@ -518,34 +382,20 @@ namespace ARTemplate
                 {//仅支持 横向
                     Bitmap bitmap = ((Bitmap)(pictureBox1.Image)).Clone(m_Imgselection, PixelFormat.Format24bppRgb);
                     using (Graphics g = Graphics.FromImage(bitmap))
-                    {   
-                        foreach (TreeNode tt in m_tn.Nodes["选区变黑"].Nodes)
-                        {
-                            if (tt.Tag != null)
-                            {
-                                Rectangle r = (Rectangle)tt.Tag;
-                                r.Intersect(m_Imgselection);
-                                if (r.Width > 0)
+                    {
+                        foreach (string s in new string[] { "选区变黑", "选区变白" })
+                            foreach (TreeNode tt in m_tn.Nodes[s].Nodes)
+                                if (tt.Tag != null)
                                 {
-                                    r.Offset(-m_Imgselection.X, -m_Imgselection.Y);
-                                    g.FillRectangle( Brushes.Black ,r);
+                                    Area I = (Area)(tt.Tag);
+                                    Rectangle r = I.ImgArea;
+                                    r.Intersect(m_Imgselection);
+                                    if (r.Width > 0)
+                                    {
+                                        r.Offset(-m_Imgselection.X, -m_Imgselection.Y);
+                                        g.FillRectangle(Brushes.Black, r);
+                                    }
                                 }
-                            }
-                        }
-                        foreach (TreeNode tt in m_tn.Nodes["选区变白"].Nodes)
-                        {
-                            if (tt.Tag != null)
-                            {
-                                Rectangle r = (Rectangle)tt.Tag;
-                                r.Intersect(m_Imgselection);
-                                if (r.Width > 0)
-                                {
-                                    r.Offset(-m_Imgselection.X, -m_Imgselection.Y);
-                                    g.FillRectangle(Brushes.White, r);
-                                }
-                            }
-                        }
-                        bitmap.Save("f:\\" + choosename + "_test.jpg");
                     }
 
                     DetectChoiceArea dca = new DetectChoiceArea(bitmap, (int)count);
@@ -555,12 +405,11 @@ namespace ARTemplate
                         t.Tag = new SingleChoiceArea(m_Imgselection,
                             t.Name, dca.Choicepoint, dca.Choicesize);
                         m_tn.Nodes[keyname].Nodes.Add(t);
-                        //pictureBox1.Invalidate();
                     }
-                    else
-                    {
-                        bitmap.Save("f:\\" + choosename + ".jpg");
-                    }
+                    //else 
+                    //{
+                    //    bitmap.Save("f:\\" + choosename + ".jpg");
+                    //}
                 }
             }
         }
@@ -593,7 +442,7 @@ namespace ARTemplate
                 TreeNode t = new TreeNode();
                 int cnt = m_tn.Nodes[keyname].GetNodeCount(false) + 1;
                 string stringname = keyname + cnt;
-                t.Tag = m_Imgselection;
+                t.Tag = new TempArea(m_Imgselection, stringname);
                 t.Name = cnt.ToString();
                 t.Text = stringname;
                 m_tn.Nodes[keyname].Nodes.Add(t);
@@ -608,7 +457,7 @@ namespace ARTemplate
                 TreeNode t = new TreeNode();
                 int cnt = m_tn.Nodes[keyname].GetNodeCount(false) + 1;
                 string stringname = keyname + cnt;
-                t.Tag = m_Imgselection;
+                t.Tag = new TempArea(m_Imgselection, stringname);
                 t.Name = cnt.ToString();
                 t.Text = stringname;
                 m_tn.Nodes[keyname].Nodes.Add(t);
@@ -626,7 +475,7 @@ namespace ARTemplate
                 {
                     if (t.Tag != null)
                     {
-                        if (((TriAngleFeature)(t.Tag)).IntersectsWith(rect))
+                        if (((FeaturePoint)(t.Tag)).IntersectsWith(rect))
                             return true;
                     }
                 }
@@ -739,13 +588,6 @@ namespace ARTemplate
         private void ShowMessage(string message)
         {
             textBoxMessage.Text = message;
-        }
-        private static bool CheckImageRectangledTriangle(Bitmap bitmap, out List<System.Drawing.Point> drawcorners)
-        {
-            //TODO:  CheckImageRectangledTriangle
-            // lock image
-            drawcorners = null;
-            return false;
         }
 
         private Rectangle m_Imgselection;

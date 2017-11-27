@@ -85,7 +85,7 @@ namespace ScanTemplate
                 src = _src;
             Bitmap bmp =src.Clone(subrect, src.PixelFormat);
 
-            //bmp.Save(sub.ToString() + ".tif");
+            //bmp.Save(subrect.ToString() + ".tif");
             Rectangle rect = DetectFeatureRectAngle(bmp);
             if (rect.Width == 1 || rect.Height == 1)
                 return new Rectangle();

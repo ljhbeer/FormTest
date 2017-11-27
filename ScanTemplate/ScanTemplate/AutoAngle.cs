@@ -35,7 +35,7 @@ namespace ScanTemplate
         {
             double r = Math.Sqrt(x * x + y * y);
             double angle = Math.Asin( x/r);
-            angle += _Angle1-_Angle2;
+            angle -= _Angle1-_Angle2;
             return new Point( (int)(r * Math.Sin(angle)),(int)(r*Math.Cos(angle)));
         }
     }
