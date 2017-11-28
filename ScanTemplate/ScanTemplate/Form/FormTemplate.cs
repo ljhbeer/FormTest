@@ -9,11 +9,12 @@ using System.Windows.Forms;
 using System.Drawing.Imaging;
 //using AForge.Math.Geometry;
 using MovetoCTL;
+using ScanTemplate;
 
 namespace ARTemplate
 {
     [Flags]
-    enum Act : short { None = 0, DefinePoint = 1, DefineId = 2, DefineChoose = 4, DefineUnChoose = 8, Zoomin, Zoomout, SeclectionToWhite, SeclectionToDark, ZoomMouse };
+    enum Act : short { None = 0, DefinePoint = 1, DefineId = 2, DefineChoose = 4, DefineUnChoose = 8,DefineName=16, Zoomin, Zoomout, SeclectionToWhite, SeclectionToDark, ZoomMouse };
     public delegate void CompleteMouseMove(bool bcompleted);
 
     public partial class FormTemplate : Form
@@ -152,7 +153,7 @@ namespace ARTemplate
             ShowMessage("act:" + m_act);
             click.Checked = !click.Checked;
             //MT.ClearEvent();
-            if (m_act == Act.DefinePoint || m_act == Act.DefineId ||
+            if (m_act == Act.DefinePoint || m_act == Act.DefineId || m_act == Act.DefineName||
                 m_act == Act.DefineChoose || m_act == Act.DefineUnChoose||
                 m_act == Act.SeclectionToDark || m_act == Act.SeclectionToWhite )
             {
@@ -184,6 +185,12 @@ namespace ARTemplate
                 m_act = Act.DefineUnChoose;
             toolStripButton_Click(sender, e);
         }
+        private void toolStripButtonName_Click(object sender, EventArgs e)
+        {
+            if (!((ToolStripButton)sender).Checked)
+                m_act = Act.DefineName;
+            toolStripButton_Click(sender, e);
+        }
         private void toolStripButtonZoomNone_Click(object sender, EventArgs e)
         {
             // zoombox.Reset();
@@ -212,6 +219,7 @@ namespace ARTemplate
                     case Act.DefineId: CompleteDeFineId(); break;
                     case Act.SeclectionToWhite: CompleteSelectionToWhite(); break;
                     case Act.SeclectionToDark: CompleteSelectionToDark(); break;
+                    case Act.DefineName: CompleteDeFineName(); break;
                 }
             }
             pictureBox1.Invalidate();
@@ -262,7 +270,7 @@ namespace ARTemplate
                 Brush white = Brushes.White;
                 Brush Red = Brushes.Red;
                 Font font = DefaultFont;
-                foreach (string s in new string[] { "特征点", "考号", "选择题", "非选择题", "选区变黑", "选区变白" })
+                foreach (string s in new string[] { "特征点", "考号","姓名", "选择题", "非选择题", "选区变黑", "选区变白" })
                 {
                     foreach (TreeNode t in m_tn.Nodes[s].Nodes)
                     {
@@ -333,40 +341,80 @@ namespace ARTemplate
             pictureBox1.Invalidate();
         }
 
-        /// <summary>
-        /// ///////////////////////未完成
-        /// </summary>
         private void CompleteDeFineId()
         {
-            //TODO: 考号
+            //TODO: 考号  实现条形码，未实现 填涂
             String keyname = "考号";
+            int cnt = m_tn.Nodes[keyname].GetNodeCount(false) ;
+
             if (!ExistDeFineSelection(keyname))
             {
-                TreeNode t = new TreeNode();
-                int cnt = m_tn.Nodes[keyname].GetNodeCount(false) + 1;
-                t.Name = t.Text = keyname + cnt;
+                if (cnt == 0)
+                {
+                    Rectangle m_Imgselection = zoombox.BoxToImgSelection(MT.Selection);
+                    TreeNode t = new TreeNode();
+                    t.Name = t.Text = keyname;
+                    t.Tag = new KaoHaoChoiceArea( m_Imgselection,t.Name,"条形码");
+                    m_tn.Nodes[keyname].Nodes.Add(t);
+                }
+                else
+                {
+                    MessageBox.Show("请先删除，考号区域只有一项");
+                }
             }
         }
         private void CompleteDeFinePoint()
         {//TODO: "特征点"
             String keyname = "特征点";
-            if (!ExistDeFineSelection(keyname))
+            int cnt = m_tn.Nodes[keyname].GetNodeCount(false);
+            if (cnt >= 3)
             {
-                //List<Point> corners = new List<Point>();
-                //Bitmap bmp = (Bitmap)pictureBox1.Image;
-                //Image cropimg = bmp.Clone(m_Imgselection, bmp.PixelFormat);
-                //Bitmap img = ConvertFormat.Convert((Bitmap)cropimg, PixelFormat.Format8bppIndexed, true);
-                //if (CheckImageRectangledTriangle(img, out corners))
-                //{
-                //    TreeNode t = new TreeNode();
-                //    int cnt = m_tn.Nodes[keyname].GetNodeCount(false) + 1;
-                //    t.Name = t.Text = keyname + cnt;
-                //    TriAngleFeature tf = new TriAngleFeature(corners, m_Imgselection.Location);
-                //    t.Tag = tf;
-                //    m_Imgselection = tf.ImgSelection();
-                //    m_tn.Nodes[keyname].Nodes.Add(t);
-                //}
+                MessageBox.Show("智能有3个特征点");
+                return;
             }
+
+            if (!ExistDeFineSelection(keyname) )
+            {
+
+                Rectangle m_Imgselection = zoombox.BoxToImgSelection(MT.Selection);
+                Bitmap bmp = (Bitmap)pictureBox1.Image;
+                m_Imgselection.Intersect( new Rectangle(0,0,bmp.Width,bmp.Height));
+                Image img = bmp.Clone(m_Imgselection, bmp.PixelFormat);
+                //Bitmap img = ConvertFormat.Convert((Bitmap)cropimg, PixelFormat.Format8bppIndexed, true);
+                MyDetectFeatureRectAngle dr = new MyDetectFeatureRectAngle(null);
+
+                Rectangle r = dr.Detected(new Rectangle(0, 0, img.Width, img.Height), (Bitmap)img);
+               
+                if (r.Width > 0 )
+                {
+                    TreeNode t = new TreeNode(); 
+                    cnt++ ;
+                    t.Name = t.Text = keyname + cnt;
+                  
+                    r.Offset(m_Imgselection.Location);
+                    //TODO  FeaturePoint(r, new Point(0, 0));
+                    t.Tag = new FeaturePoint(r, new Point(bmp.Width/2, bmp.Height/2));
+                    //m_Imgselection = tf.ImgSelection();
+                    m_tn.Nodes[keyname].Nodes.Add(t);
+                }
+            }
+        }
+        private void CompleteDeFineName()
+        {
+             String keyname = "姓名";
+             TreeNode t = new TreeNode();
+             int cnt = m_tn.Nodes[keyname].GetNodeCount(false);
+             if (cnt == 0)
+             {
+                 t.Name = t.Text = keyname;
+                 Rectangle m_Imgselection = zoombox.BoxToImgSelection(MT.Selection);
+                 t.Tag = new NameArea(m_Imgselection);
+                 m_tn.Nodes[keyname].Nodes.Add(t);
+             }
+             else
+             {
+                 MessageBox.Show("请先删除，姓名区域只有一项");
+             }
         }
         private void CompleteDeFineChoose()
         {
@@ -469,36 +517,13 @@ namespace ARTemplate
             int reduceH = rect.Height / 8;
             rect.Y += reduceH;
             rect.Height -= reduceH * 2;
-            if (keyname == "特征点")
+            if (keyname == "特征点" || keyname == "选择题" || keyname =="非选择题")
             {
                 foreach (TreeNode t in m_tn.Nodes[keyname].Nodes)
                 {
                     if (t.Tag != null)
                     {
-                        if (((FeaturePoint)(t.Tag)).IntersectsWith(rect))
-                            return true;
-                    }
-                }
-            }
-            else if (keyname == "选择题")
-            {
-                foreach (TreeNode t in m_tn.Nodes[keyname].Nodes)
-                {
-                    if (t.Tag != null)
-                    {
-                        if (((SingleChoiceArea)(t.Tag)).IntersectsWith(rect))
-                            return true;
-                    }
-                }
-
-            }
-            else if (keyname == "非选择题")
-            {
-                foreach (TreeNode t in m_tn.Nodes[keyname].Nodes)
-                {
-                    if (t.Tag != null)
-                    {
-                        if (((UnChoose)(t.Tag)).IntersectsWith(rect))
+                        if (((Area)(t.Tag)).IntersectsWith(rect))
                             return true;
                     }
                 }
@@ -520,7 +545,6 @@ namespace ARTemplate
                 pictureBox1.Invalidate();
             }
         }
-
         private void RefreshTemplate()
         {
             m_act = Act.None;
@@ -542,47 +566,16 @@ namespace ARTemplate
         private void UpdateTemplate()
         {
             template.ResetData();
-            foreach (TreeNode n in m_tn.Nodes["考号"].Nodes)
+            // "特征点", "考号","姓名", "选择题", "非选择题", "选区变黑", "选区变白" 
+            foreach (TreeNode t in m_tn.Nodes)
             {
-                if (n.Tag != null)
+                foreach (TreeNode n in m_tn.Nodes[t.Name].Nodes)
                 {
-                    template.AddKaoHaoSingleChoiceArea((KaoHaoChoiceArea)n.Tag);
+                    if (n.Tag != null)
+                    {
+                        template.AddArea((Area)n.Tag,t.Name);
+                    }
                 }
-            }
-            foreach (TreeNode n in m_tn.Nodes["选择题"].Nodes)
-            {
-                if (n.Tag != null)
-                {
-                    template.AddSingleChoiceArea((SingleChoiceArea)n.Tag);
-                }
-            }
-            //foreach (TreeNode n in m_tn.Nodes["非选择题"].Nodes)
-            //{
-            //    if (n.Tag != null)
-            //    {
-            //        template.AddUnChoose((UnChoose)n.Tag);
-            //    }
-            //}
-            if (m_tn.Nodes["特征点"].Nodes.Count >= 3)
-            {
-                //TriAngleFeature p0, p1, p2;
-                //p0 = p1 = p2 = null;
-                //foreach (TreeNode n in m_tn.Nodes["特征点"].Nodes)
-                //{
-                //    if (n.Tag != null)
-                //    {
-                //        TriAngleFeature t = (TriAngleFeature)n.Tag;
-                //        if (t.Direction == 0)
-                //            p0 = t;
-                //        else if (t.Direction == 1)
-                //            p1 = t;
-                //        else if (t.Direction == 2)
-                //            p2 = t;
-                //    }
-                //}
-                //if (p0 == null || p1 == null || p2 == null || template == null)
-                //    return;
-                //template.AddFeaturePoints(p0, p1, p2);
             }
         }
         private void ShowMessage(string message)
@@ -598,5 +591,6 @@ namespace ARTemplate
         private ZoomBox zoombox;
         private Template template;
         private double _OriginWith;
+
     }
 }

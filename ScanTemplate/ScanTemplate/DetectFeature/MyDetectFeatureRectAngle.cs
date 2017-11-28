@@ -25,12 +25,15 @@ namespace ScanTemplate
         public MyDetectFeatureRectAngle(System.Drawing.Bitmap bmp)
         {
             this._src = bmp;
-            _listsubjects = new List<subject>(){
+            if (_src != null)
+            {
+                _listsubjects = new List<subject>(){
                 new subject("左上",new  Rectangle(50, 80, 250, 100)),
                 new subject("右上",new  Rectangle(bmp.Width-300, 80, 300, 100)),
                 new subject("左下",new  Rectangle(50, bmp.Height-280, 250, 100)) };
-            _listFeatureRectangles = new List<Rectangle>();
-            Detect3Point();
+                _listFeatureRectangles = new List<Rectangle>();
+                Detect3Point();
+            }
             //Bitmap newbmp = (Bitmap)_src.Clone(CorrectRect, _src.PixelFormat);
             //newbmp.Save("correct.tif");
         }
@@ -316,7 +319,8 @@ namespace ScanTemplate
                         len = 0;
                 }
             }
-
+             if (len > yblackcnt)
+                Xlen = len;
             int Ypoint = 0;
             len = 0;
             for (int i = 0; i < ycnt.Count; i++)
@@ -338,6 +342,8 @@ namespace ScanTemplate
                         len = 0;
                 }
             }
+            if (len > xblackcnt)
+                Ylen = len;
             //string str = string.Join(",", xxcnt) + "\r\n" + string.Join(",", yycnt);
             //File.WriteAllText("a.txt", str);
             Rectangle rect = new Rectangle(Xpoint, Ypoint, Xlen, Ylen);

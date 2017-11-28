@@ -165,6 +165,10 @@ namespace ARTemplate
         public virtual bool HasSubArea() {  return false;  }
         public virtual bool NeedFill() { return false; }
         public virtual Brush FillPen() { return Brushes.Black; }
+        public virtual string ToXmlString()
+        {
+            return "";
+        }
         public Rectangle Rect;
     }
     public class FeaturePoint : Area
@@ -192,7 +196,7 @@ namespace ARTemplate
         {
                 return new Rectangle[] { Rect, BigImgSelection() };
         }
-        public String ToXmlString()
+        public override String ToXmlString()
         {
             String str = "";
             str += "<Rectangle>" + Rect.X + "," + Rect.Y+ "," +  + Rect.Width + "," + Rect.Height + "</Rectangle>";
@@ -218,60 +222,65 @@ namespace ARTemplate
         {
             return text;
         }
-        private string ToXmlString()
+        public override string ToXmlString()
         {
             return "";
         }
     }
     public class KaoHaoChoiceArea : Area
     {
-        public KaoHaoChoiceArea(Rectangle m_Imgselection, string name, List<List<Point>> list, Size size)
+        public KaoHaoChoiceArea(Rectangle m_Imgselection, string name, string type)
         {
             this.Rect = m_Imgselection;
             this.Name = name;
-            this.list = list;
-            this.size = size;
+            this.Type = type; // 条形码  ，  填涂横向， 填涂纵向
+        }
+        public override bool HasSubArea()
+        {
+            if (Type == "条形码")
+                return false;
+            return true;
         }
         public override Rectangle[] ImgSubArea() { 
-           
-            int count = 0;
-            foreach(List<Point> l in list)
-                count += l.Count;
-            if(count == 0 ) return null;
-            Rectangle[] rv = new Rectangle[count];
-            int i = 0;
-            foreach (List<Point> l in list)
-            {
-                foreach (Point p in l)
-                {
-                    rv[i] = new Rectangle(p, size);
-                    i++;
-                }
-            } 
-            return rv; 
+            
+            //int count = 0;
+            //foreach(List<Point> l in list)
+            //    count += l.Count;
+            //if(count == 0 ) return null;
+            //Rectangle[] rv = new Rectangle[count];
+            //int i = 0;
+            //foreach (List<Point> l in list)
+            //{
+            //    foreach (Point p in l)
+            //    {
+            //        rv[i] = new Rectangle(p, size);
+            //        i++;
+            //    }
+            //} 
+            //return rv; 
+            return null;
             
         }
-        public string ToXmlString()
+        public override string ToXmlString() //分Type
         {
             String str = "";
             String strp = "";
-            int i = 0;
-            str += "<RECTANGLE>" + Rect.X + "," + Rect.Y + "," + Rect.Width + "," + Rect.Height + "</RECTANGLE>"
-                    + "<NAME>" + Name + "</NAME>" + "<SIZE>"+size.Width+","+size.Height+"</SIZE>";
-            foreach (List<Point> lp in list)
-            {
-                strp = "";
-                foreach(Point p in lp)
-                    strp += "<POINT>" + p.X + "," + p.Y + "</POINT>";
-                str += "<SINGLE ID=\""+i+"\">" + strp + "</SINGLE>";
-                i++;
-            }
+            //int i = 0;
+            //str += "<RECTANGLE>" + Rect.X + "," + Rect.Y + "," + Rect.Width + "," + Rect.Height + "</RECTANGLE>"
+            //        + "<NAME>" + Name + "</NAME>" + "<SIZE>"+size.Width+","+size.Height+"</SIZE>";
+            //foreach (List<Point> lp in list)
+            //{
+            //    strp = "";
+            //    foreach(Point p in lp)
+            //        strp += "<POINT>" + p.X + "," + p.Y + "</POINT>";
+            //    str += "<SINGLE ID=\""+i+"\">" + strp + "</SINGLE>";
+            //    i++;
+            //}
             return str;
         }
         //private SingleChoice[] scv;
         public string Name { get; set; }
-        public List<List<Point>> list;
-        public Size size;
+        private string Type;
     }
     public class SingleChoiceArea : Area
     {
@@ -306,7 +315,7 @@ namespace ARTemplate
             return rv; 
         }
 
-        public string ToXmlString()
+        public override string ToXmlString()
         {
             String str = "";
             String strp = "";
@@ -344,7 +353,7 @@ namespace ARTemplate
             this.Rect = imgrect;
         }
         public int Scores { get { return (int)score; } }       
-        public string ToXmlString()
+        public override string ToXmlString()
         {
             String str =  "<RECTANGLE>" + Rect.X + "," + Rect.Y + "," + Rect.Width + "," + Rect.Height + "</RECTANGLE>"
                     + "<NAME>"+_name+"</NAME>" + "<SCORE>"+score+"</SCORE>";
@@ -357,6 +366,14 @@ namespace ARTemplate
         public string Name { get { return _name; } }
         private float score;
         private string _name;
+    }
+    public class NameArea : Area
+    {
+        public NameArea(Rectangle rect)
+        {
+            this.Rect = rect;
+        }
+
     }
     public class TempArea : Area
     {

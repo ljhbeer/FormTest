@@ -23,7 +23,7 @@ namespace ScanTemplate
         public string  ComputeXZT(string num = "")
         {
             StringBuilder sb = new StringBuilder();
-            foreach(SingleChoiceArea sca in _artemplate.SingleChoiceAreas)
+            foreach(SingleChoiceArea sca in _artemplate.SingleAreas)
             {
                 Rectangle r = sca.Rect;
                 Point nL = _angle.GetCorrectPoint(r.X, r.Y);
