@@ -22,6 +22,13 @@ namespace ScanTemplate
                     _listFeatureRectangles[2].Location};
             }
         }
+        public List<Rectangle> ListFeatureRectangle
+        {
+            get
+            {
+                return _listFeatureRectangles;
+            }
+        }
         public MyDetectFeatureRectAngle(System.Drawing.Bitmap bmp)
         {
             this._src = bmp;

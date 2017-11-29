@@ -50,7 +50,7 @@ namespace ScanTemplate
             //MessageBox.Show(msg);
             //TODO：检测是否存在模板文件
             string filename = nameList[0];
-            TestAndCreateTemplate( filename,nameList);
+            TestAndCreateTemplate(filename, nameList);
         }
         private void TestAndCreateTemplate( string filename, List<string> namelist=null)
         {
@@ -59,17 +59,24 @@ namespace ScanTemplate
 
             if (dr.Detected())
             {
-                if(_artemplate==null)
-                _artemplate = new ARTemplate.Template(filename, bmp, dr.CorrectRect);
+                if (_artemplate == null)
+                {
+                    _artemplate = new ARTemplate.Template(filename, bmp, dr.CorrectRect);
+                    _angle = new AutoAngle(dr.ListPoint); //或者导入时 设置
+                }
+                _angle.SetPaper(dr.ListPoint[0],dr.ListPoint[1],dr.ListPoint[2]);
+
+                _artemplate.ResetBitMap(filename, bmp, dr.CorrectRect);//,_angle
+
+                _artemplate.SetFeaturePoint(dr.ListFeatureRectangle,dr.CorrectRect);
 
                 this.Hide();
                 ARTemplate.FormTemplate f = new ARTemplate.FormTemplate(_artemplate);
                 f.ShowDialog();
                 this.Show();
 
-                _angle = new AutoAngle(dr.ListPoint);
-                if(namelist!=null)
-                DetectAllImgs(dr, namelist);
+                //if(namelist!=null)
+                //DetectAllImgs(dr, namelist);
             }
         }
         private void DetectAllImgs(MyDetectFeatureRectAngle dr,List<string> nameList)

@@ -20,10 +20,23 @@ namespace ARTemplate
             _dic = new Dictionary<string, List<Area>>();
     
         }
-        public void ResetData()
+        public void ResetBitMap(string imgpath, Bitmap bmp, Rectangle CorrectRect)
         {
-            foreach (string s in new string[] { "特征点", "考号", "姓名", "选择题", "非选择题", "选区变黑", "选区变白" })
-                _dic[s].Clear();
+            this._imagefilename = imgpath;
+            this._src = bmp.Clone(CorrectRect, bmp.PixelFormat);
+            this.Correctrect = CorrectRect;
+            if (_dic.ContainsKey("特征点"))
+                _dic["特征点"].Clear();
+        }
+        public void ResetData(bool clearFeaturePoint=true)
+        { //"特征点",不能清除
+            foreach (string s in new string[] {"特征点",  "考号", "姓名", "选择题", "非选择题", "选区变黑", "选区变白" })
+                if (_dic.ContainsKey(s))
+                {
+                    if (!clearFeaturePoint && s == "特征点")
+                        continue;
+                    _dic[s].Clear();
+                }
         }
         public bool CheckEmpty()
         {
@@ -51,16 +64,16 @@ namespace ARTemplate
             xmlDoc.AppendChild(root);
             XmlNode path = xmlDoc.CreateElement("BASE");
             root.AppendChild(path);
-            path.InnerXml = "<SIZE>" + Imgsize.Width + "," + Imgsize.Height + "</SIZE>"
-                            + "<PATH>" + _imagefilename + "</PATH>";
+            path.InnerXml = Imgsize.ToXmlString() + _imagefilename.ToXmlString("PATH")+Correctrect.ToXmlString().ToXmlString("CORRECTRECT");
 
             foreach (string s in new string[] { "特征点-FEATUREPOINTSAREA", "考号-KAOHAOAREA", "姓名-NAMEAREA", "选择题-SINGLECHOICES", "非选择题-UNCHOOSES", "选区变黑-BLACKAREA", "选区变白-WHITEAREA" })
             {
                 string name = s.Substring(0, s.IndexOf("-"));
-                string ENname = s.Substring(s.IndexOf("-"));
-                XmlNode  list = xmlDoc.CreateElement("");
+                string ENname = s.Substring(s.IndexOf("-")+1);
+                XmlNode  list = xmlDoc.CreateElement(ENname+"S");
                 root.AppendChild(list);
                 int i = 0;
+                if(_dic.ContainsKey(name))
                 foreach (Area I in _dic[name])
                 {
                     XmlElement xe = xmlDoc.CreateElement(ENname);
@@ -83,6 +96,10 @@ namespace ARTemplate
                 xmlDoc.Load(xmlFileName);
                 _imagefilename = xmlDoc.SelectSingleNode(NodeName + "/BASE/PATH").InnerText;
                 Size imgsize =Tools.StringTools. StringToSize(xmlDoc.SelectSingleNode(NodeName + "/BASE/SIZE").InnerText);
+                Point midpoint = new Point(imgsize.Width / 2, imgsize.Height / 2);
+                XmlNode xn = xmlDoc.SelectSingleNode(NodeName + "/BASE/CORRECTRECT");
+                if (xn != null)
+                    Correctrect = Tools.StringTools.StringToRectangle(xn.InnerText);
                 //////Bitmap bitmap =(Bitmap) Bitmap.FromFile(_imagefilename);
                 //////if (bitmap.Size != imgsize)
                 //////    return false;
@@ -90,68 +107,122 @@ namespace ARTemplate
                 foreach (string s in new string[] { "特征点-FEATUREPOINTSAREA", "考号-KAOHAOAREA", "姓名-NAMEAREA", "选择题-SINGLECHOICES", "非选择题-UNCHOOSES", "选区变黑-BLACKAREA", "选区变白-WHITEAREA" })
                 {
                     string name = s.Substring(0, s.IndexOf("-"));
-                    string ENname = s.Substring(s.IndexOf("-"));
-                    string path = (NodeName + "/[]/*").Replace("[]",ENname);
+                    string ENname = s.Substring(s.IndexOf("-")+1);
+                    string path = (NodeName + "/[]/*").Replace("[]",ENname+"S");
                     XmlNodeList  list = xmlDoc.SelectNodes(path);
                     _dic[name] = new List<Area>();
-                    foreach (XmlNode node in list)
+
+                    if (ENname == "KAOHAOAREA")
                     {
-                        if (ENname == "KAOHAOAREA")
+                        if (list.Count > 0)
                         {
-                            Rectangle rect = Tools.StringTools.StringToRectangle(node.SelectSingleNode("RECTANGLE").InnerText);
-                            Size ssize = Tools.StringTools.StringToSize(node.SelectSingleNode("SIZE").InnerText);
-                            List<List<Point>> llistp = new List<List<Point>>();
-                            foreach (XmlNode node1 in node.ChildNodes)
+                            XmlNode node = list[0];
+                            XmlNode type = node.SelectSingleNode("TYPE");
+                            XmlNode rect = node.SelectSingleNode("Rectangle");
+                            if (type == null || rect == null)
+                                continue;
+                            string Type = type.InnerText;
+                            Rectangle r = Tools.StringTools.StringToRectangle(node.InnerText);
+                            if (Type == "条形码")
+                                _dic[name].Add(new KaoHaoChoiceArea(r, "考号", Type));
+                        }
+                    }
+                    else if (ENname == "FEATUREPOINTSAREA")
+                    {
+                        List<Rectangle> lr = new List<Rectangle>();
+                        foreach (XmlNode node in list)
+                        {
+                            if (node.FirstChild.Name == "Rectangle")
                             {
-                                if (node1.Name == "SINGLE")
-                                {
-                                    List<Point> listp = new List<Point>();
-                                    foreach (XmlNode node2 in node1.ChildNodes)
-                                    {
-                                        listp.Add(Tools.StringTools.StringToPoint(node2.InnerText));
-                                    }
-                                    llistp.Add(listp);
-                                }
+                                Rectangle r = Tools.StringTools.StringToRectangle(node.InnerText);
+                                _dic[name].Add(new FeaturePoint(r, midpoint));
                             }
-                            _dic[name].Add(new KaoHaoChoiceArea(rect, name, "条形码"));
-                        }else if(ENname == "FEATUREPOINTSAREA")
-                        {
                         }
-                        else if (ENname == "NAMEAREA")
+                    }
+                    else if (ENname == "NAMEAREA")
+                    {
+                        if (list.Count == 0) continue;
+                        XmlNode rect = list[0].SelectSingleNode("Rectangle");
+                        if (rect != null)
                         {
+                            Rectangle r = Tools.StringTools.StringToRectangle(rect.InnerText);                          
+                            _dic[name].Add(new NameArea(r));
                         }
-                        else if (ENname == "SINGLECHOICES")
+                    }
+                    else if (ENname == "SINGLECHOICES")
+                    {
+                        foreach (XmlNode node in list)
                         {
-                            Rectangle rect = Tools.StringTools.StringToRectangle(node.SelectSingleNode("RECTANGLE").InnerText);
-                            Size ssize = Tools.StringTools.StringToSize(node.SelectSingleNode("SIZE").InnerText);
-                            List<List<Point>> llistp = new List<List<Point>>();
-                            foreach (XmlNode node1 in node.ChildNodes)
+                            XmlNode rect = node.SelectSingleNode("Rectangle");
+                            XmlNode xname = node.SelectSingleNode("NAME");
+                            XmlNode xsize = node.SelectSingleNode("SIZE");
+
+                            if (rect != null && xname != null && xsize != null)
                             {
-                                if (node1.Name == "SINGLE")
+                                Rectangle r = Tools.StringTools.StringToRectangle(rect.InnerText);
+                                string strname = xname.InnerText;
+                                Size size = Tools.StringTools.StringToSize(xsize.InnerText);
+
+                                List<List<Point>> llp = new List<List<Point>>();
+                                foreach (XmlNode node1 in node.ChildNodes)
                                 {
-                                    List<Point> listp = new List<Point>();
-                                    foreach (XmlNode node2 in node1.ChildNodes)
+                                    if (node1.Name == "SINGLE")
                                     {
-                                        listp.Add(Tools.StringTools.StringToPoint(node2.InnerText));
+                                        List<Point> listp = new List<Point>();
+                                        foreach (XmlNode node2 in node1.ChildNodes)
+                                        {
+                                            listp.Add(Tools.StringTools.StringToPoint(node2.InnerText));
+                                        }
+                                        llp.Add(listp);
                                     }
-                                    llistp.Add(listp);
                                 }
+                                _dic[name].Add(new SingleChoiceArea(r,strname,llp,size));
                             }
-                            _dic[name].Add(new SingleChoiceArea(rect, name, llistp, ssize));
                         }
-                        else if (ENname == "UNCHOOSES")
+                    }
+                    else if (ENname == "UNCHOOSES")
+                    {
+                        foreach (XmlNode node in list)
                         {
+                            XmlNode rect = node.SelectSingleNode("Rectangle");
+                            XmlNode xname = node.SelectSingleNode("NAME");
+                            XmlNode xscore = node.SelectSingleNode("SCORE");
+                            if (rect != null && xname!=null  && xscore!=null)
+                            {
+                                Rectangle r = Tools.StringTools.StringToRectangle(rect.InnerText);
+                                string strname = xname.InnerText;
+                                float score =(float) Convert.ToDouble(xscore.InnerText);
+                                _dic[name].Add(new UnChoose(score,strname,r));
+                            }
                         }
-                        else if (ENname == "BLACKAREA")
+                    }
+                    else if (ENname == "BLACKAREA")
+                    {
+                        foreach (XmlNode node in list)
                         {
+                            XmlNode rect = node.SelectSingleNode("Rectangle");
+                            if (rect != null)
+                            {
+                                Rectangle r = Tools.StringTools.StringToRectangle(rect.InnerText);
+                                _dic[name].Add(new TempArea(r, "选区变黑"));
+                            }
                         }
-                        else if (ENname == "WHITEAREA")
+                    }
+                    else if (ENname == "WHITEAREA")
+                    {
+                        foreach (XmlNode node in list)
                         {
+                            XmlNode rect = node.SelectSingleNode("Rectangle");
+                            if (rect != null)
+                            {
+                                Rectangle r = Tools.StringTools.StringToRectangle(rect.InnerText);
+                                _dic[name].Add(new TempArea(r, "选区变白"));
+                            }
                         }
                     }
                 }
             }
-            catch
+            catch(Exception ex)
             {
                 ResetData();
                 return false;
@@ -174,8 +245,23 @@ namespace ARTemplate
                 }
             }               
         }
-        
-        public String NodeName{ get { return "TEMPLATE"; } }
+        public void SetFeaturePoint(List<Rectangle> list, Rectangle cr)
+        {
+            if( Correctrect.ToString() != cr.ToString() )
+                return;
+            Point midpoint = new Point(cr.Width / 2, cr.Height / 2);
+            string key = "特征点";
+            if (!_dic.ContainsKey(key))
+                _dic[key] = new List<Area>();
+            _dic[key].Clear();
+            for (int i = 0; i < list.Count; i++)
+            {
+                Rectangle r = list[i];
+                r.Offset(-cr.X,-cr.Y);
+                _dic[key].Add(new FeaturePoint(r, midpoint));
+            }
+        }
+        public String NodeName { get { return "TEMPLATE"; } }
         public Bitmap Image { get { return _src; } }
         public List<Area> SingleAreas {get { return _dic["选择题"];}}
         public Size Imgsize
@@ -193,6 +279,6 @@ namespace ARTemplate
         }
         private Bitmap _src;
         private string _imagefilename;
-        private Dictionary< string, List<Area>> _dic;      
+        private Dictionary< string, List<Area>> _dic;
     }
 }

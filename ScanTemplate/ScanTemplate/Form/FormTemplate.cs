@@ -25,6 +25,7 @@ namespace ARTemplate
             template = t;
             Init();
             Reset();
+            template.SetDataToNode(m_tn);
         }
         private void Init()
         {
@@ -46,7 +47,7 @@ namespace ARTemplate
         }
         private void Reset()
         {
-            template.ResetData();
+            //template.ResetData(false);
             m_tn.Nodes.Clear();
             //MT.ClearEvent();
             m_Imgselection = new Rectangle(0, 0, 0, 0);
@@ -85,9 +86,9 @@ namespace ARTemplate
                     UpdateTemplate();
                     template.Save(saveFileDialog2.FileName);
                 }
-                catch
+                catch(Exception ex)
                 {
-                    MessageBox.Show("Failed loading selected image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -103,14 +104,16 @@ namespace ARTemplate
                 try
                 {
                     if (template.Load(OpenFileDialog2.FileName))
+                    {
                         RefreshTemplate();
+                        pictureBox1.Invalidate();
+                    }
                 }
                 catch
                 {
-                    MessageBox.Show("Failed loading selected image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("模板加载失败", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            MessageBox.Show("暂未实现");
         }        
         private void toolStripButtonWhite_Click(object sender, EventArgs e)
         {
@@ -553,14 +556,10 @@ namespace ARTemplate
             for (int i = 0; i < m_tn.Nodes.Count; i++)
                 m_tn.Nodes[i].Nodes.Clear();
             template.SetDataToNode(m_tn);
-            if (template.Filename != null)
+            if (pictureBox1.Image == null)
             {
-                pictureBox1.Image = Bitmap.FromFile(template.Filename);
-            }
-            else
-            {
-                pictureBox1.Image = null;
-            }
+                pictureBox1.Image = template.Image;
+            }         
             zoombox.UpdateBoxScale(pictureBox1);
         }
         private void UpdateTemplate()

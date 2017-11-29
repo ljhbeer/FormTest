@@ -167,7 +167,7 @@ namespace ARTemplate
         public virtual Brush FillPen() { return Brushes.Black; }
         public virtual string ToXmlString()
         {
-            return "";
+            return Rect.ToXmlString();
         }
         public Rectangle Rect;
     }
@@ -196,12 +196,6 @@ namespace ARTemplate
         {
                 return new Rectangle[] { Rect, BigImgSelection() };
         }
-        public override String ToXmlString()
-        {
-            String str = "";
-            str += "<Rectangle>" + Rect.X + "," + Rect.Y+ "," +  + Rect.Width + "," + Rect.Height + "</Rectangle>";
-            return str;
-        }
         private Rectangle BigImgSelection()
         {
            return  new Rectangle(Rect.X - Rect.Width,
@@ -224,7 +218,7 @@ namespace ARTemplate
         }
         public override string ToXmlString()
         {
-            return "";
+            return base.ToXmlString() + text.ToXmlString("TXT");
         }
     }
     public class KaoHaoChoiceArea : Area
@@ -241,46 +235,51 @@ namespace ARTemplate
                 return false;
             return true;
         }
-        public override Rectangle[] ImgSubArea() { 
-            
-            //int count = 0;
-            //foreach(List<Point> l in list)
-            //    count += l.Count;
-            //if(count == 0 ) return null;
-            //Rectangle[] rv = new Rectangle[count];
-            //int i = 0;
-            //foreach (List<Point> l in list)
-            //{
-            //    foreach (Point p in l)
-            //    {
-            //        rv[i] = new Rectangle(p, size);
-            //        i++;
-            //    }
-            //} 
-            //return rv; 
+        public override Rectangle[] ImgSubArea() {
+            if (Type == "填涂横向" || Type == "填涂纵向")
+            {
+                int count = 0;
+                foreach (List<Point> l in list)
+                    count += l.Count;
+                if (count == 0) return null;
+
+                Rectangle[] rv = new Rectangle[count];
+                int i = 0;
+                foreach (List<Point> l in list)
+                {
+                    foreach (Point p in l)
+                    {
+                        rv[i] = new Rectangle(p, Size);
+                        i++;
+                    }
+                }
+                return rv; 
+            }
             return null;
             
         }
         public override string ToXmlString() //分Type
         {
-            String str = "";
-            String strp = "";
-            //int i = 0;
-            //str += "<RECTANGLE>" + Rect.X + "," + Rect.Y + "," + Rect.Width + "," + Rect.Height + "</RECTANGLE>"
-            //        + "<NAME>" + Name + "</NAME>" + "<SIZE>"+size.Width+","+size.Height+"</SIZE>";
-            //foreach (List<Point> lp in list)
-            //{
-            //    strp = "";
-            //    foreach(Point p in lp)
-            //        strp += "<POINT>" + p.X + "," + p.Y + "</POINT>";
-            //    str += "<SINGLE ID=\""+i+"\">" + strp + "</SINGLE>";
-            //    i++;
-            //}
+            String str =Type.ToXmlString("TYPE") + Rect.ToXmlString() 
+                + Name.ToXmlString("NAME"); //+ "<SIZE>" + size.Width + "," + size.Height + "</SIZE>"
+            if (Type == "条形码")
+                str += "";
+            else if (Type == "填涂横向" || Type == "填涂纵向")
+            { 
+                int i = 0;
+                str += Size.ToXmlString();
+                foreach (List<Point> lp in list)
+                {
+                   str += "<SINGLE ID=\"" + i++ + "\">" + string.Join("", lp.Select(r => r.ToXmlString())) + "</SINGLE>";
+                }
+            }
             return str;
         }
-        //private SingleChoice[] scv;
         public string Name { get; set; }
         private string Type;
+        // "填涂横向" || Type == "填涂纵向"
+        public List<List<Point>> list;
+        public Size Size;
     }
     public class SingleChoiceArea : Area
     {
@@ -317,17 +316,11 @@ namespace ARTemplate
 
         public override string ToXmlString()
         {
-            String str = "";
-            String strp = "";
+            String str = Rect.ToXmlString() + _name.ToXmlString("NAME")+Size.ToXmlString();
             int i = 0;
-            str += "<RECTANGLE>" + Rect.X + "," + Rect.Y + "," + Rect.Width + "," + Rect.Height + "</RECTANGLE>"
-                    + "<NAME>" + _name + "</NAME>" + "<SIZE>"+Size.Width+","+Size.Height+"</SIZE>";
             foreach (List<Point> lp in list)
-            {
-                strp = "";
-                foreach(Point p in lp)
-                    strp += "<POINT>" + p.X + "," + p.Y + "</POINT>";
-                str += "<SINGLE ID=\""+i+"\">" + strp + "</SINGLE>";
+            { 
+                str +="<SINGLE ID=\"" + i + "\">" + string.Join("", lp.Select(r => r.ToXmlString())) + "</SINGLE>";
                 i++;
             }
             return str;
@@ -355,9 +348,7 @@ namespace ARTemplate
         public int Scores { get { return (int)score; } }       
         public override string ToXmlString()
         {
-            String str =  "<RECTANGLE>" + Rect.X + "," + Rect.Y + "," + Rect.Width + "," + Rect.Height + "</RECTANGLE>"
-                    + "<NAME>"+_name+"</NAME>" + "<SCORE>"+score+"</SCORE>";
-            return str;
+            return Rect.ToXmlString() + _name.ToXmlString("NAME") + score.ToString().ToXmlString("SCORE");
         }
         public override String ToString()
         {
@@ -388,6 +379,10 @@ namespace ARTemplate
         }
         public override  bool NeedFill() { return true; }
         public override  Brush FillPen() { return _P; }
+        //public override string ToXmlString()
+        //{
+        //    return base.ToXmlString() + _Name.ToXmlString("Name");
+        //}
         private string _Name;
         private Brush _P;
     }
@@ -490,5 +485,27 @@ namespace ARTemplate
         Point cp;
         Point rp;
         Point bp;
+    }
+    
+    //Rectangle Tools
+    public static class extend
+    {
+        public static string ToXmlString(this Rectangle Rect)
+        {
+            return "<Rectangle>" + Rect.X + "," + Rect.Y + "," + +Rect.Width + "," + Rect.Height + "</Rectangle>";
+        }
+        public static string ToXmlString(this String str,String tagname)
+        {
+            return ("<[tag]>"+str+"</[tag]>").Replace("[tag]",tagname);
+        }
+        public static string ToXmlString(this Point p)
+        {
+            return "<POINT>" + p.X + "," + p.Y + "</POINT>";
+        }
+        public static string ToXmlString(this Size s)
+        {
+            return "<SIZE>" + s.Width + "," + s.Height + "</SIZE>";
+        }
+
     }
 }
