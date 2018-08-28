@@ -50,6 +50,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ABPages.cs" />
+    <Compile Include="DetectData.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -58,6 +60,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tools.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="MainForm.resx">
