@@ -8,7 +8,7 @@
  */
 namespace FormTest
 {
-	partial class MainForm
+	partial class FormShowPicture
 	{
 		/// <summary>
 		/// Designer variable used to keep track of non-visual components.
@@ -36,17 +36,34 @@ namespace FormTest
 		/// </summary>
 		private void InitializeComponent()
 		{
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
-            // MainForm
+            // pictureBox1
+            // 
+            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(523, 380);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pictureBox1.TabIndex = 0;
+            this.pictureBox1.TabStop = false;
+            // 
+            // FormShowPicture
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(503, 296);
-            this.Name = "MainForm";
+            this.ClientSize = new System.Drawing.Size(523, 380);
+            this.Controls.Add(this.pictureBox1);
+            this.Name = "FormShowPicture";
             this.Text = "FormTest";
+            this.Load += new System.EventHandler(this.FormShowPicture_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
 
         }
+
+        private System.Windows.Forms.PictureBox pictureBox1;
 	}
 }

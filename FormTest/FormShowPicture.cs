@@ -14,9 +14,9 @@ namespace FormTest
 	/// <summary>
 	/// Description of MainForm.
 	/// </summary>
-	public partial class MainForm : Form
+	public partial class FormShowPicture : Form
 	{
-		public MainForm()
+		public FormShowPicture()
 		{
 			InitializeComponent();			
 		}		
@@ -24,6 +24,14 @@ namespace FormTest
 		{
 
 		}
+
+        private void FormShowPicture_Load(object sender, EventArgs e)
+        {
+            if (File.Exists("ImportStudentImg\\readme.jpg"))
+            {
+                pictureBox1.Image = Bitmap.FromFile("ImportStudentImg\\readme.jpg");
+            }
+        }
 
 	}
 	
